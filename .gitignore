@@ -1,0 +1,52 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# LaTeX build artifacts
+PINN_ELM/*.aux
+PINN_ELM/*.bbl
+PINN_ELM/*.blg
+PINN_ELM/*.log
+PINN_ELM/*.out
+PINN_ELM/*.toc
+PINN_ELM/*.fdb_latexmk
+PINN_ELM/*.fls
+PINN_ELM/*.synctex.gz
+PINN_ELM/*.spl
+
+PINN_ELM_final/*.aux
+PINN_ELM_final/*.bbl
+PINN_ELM_final/*.blg
+PINN_ELM_final/*.log
+PINN_ELM_final/*.out
+PINN_ELM_final/*.toc
+PINN_ELM_final/*.fdb_latexmk
+PINN_ELM_final/*.fls
+PINN_ELM_final/*.synctex.gz
+PINN_ELM_final/*.spl
+PINN_ELM_final/*.pdf
+
+PINN_ELM_review/*.aux
+PINN_ELM_review/*.bbl
+PINN_ELM_review/*.blg
+PINN_ELM_review/*.log
+PINN_ELM_review/*.out
+PINN_ELM_review/*.toc
+PINN_ELM_review/*.fdb_latexmk
+PINN_ELM_review/*.fls
+PINN_ELM_review/*.synctex.gz
+PINN_ELM_review/*.spl
+PINN_ELM_review/*.pdf
+PINN_ELM_review/*.loc
+PINN_ELM_review/*.soc
+
+# Downloaded datasets
+data/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
