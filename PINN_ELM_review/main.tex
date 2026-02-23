@@ -108,7 +108,7 @@ For our implementation, we set $\alpha=2.0$. This specific value is significant 
 \bigskip
 \noindent\fcolorbox{red}{red!10}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 {\color{red}\textbf{NEED TO CHECK AND VERIFY}}\\[4pt]
-\textbf{Review Note \#1 --- Weight Scaling:} The current notebook implementation rescales the Power-Law weights by a factor of $0.1$ (i.e.\ \texttt{weights * 0.1}). For $\sin(x \cdot w + b)$ with $x \in [-1,1]$, this collapses the argument to $\approx 0$, placing all neurons in the small-angle linear regime $\sin(\epsilon) \approx \epsilon$ and destroying the multiscale basis that the Power-Law distribution is designed to provide.}}
+\textbf{Review Note \#1 --- Weight Scaling:} The PDE notebook cells rescale all weights by a factor of $0.1$ (i.e.\ \texttt{weights * 0.1}). For $\sin(x \cdot w + b)$ with scalar input $x \in [-1,1]$, this places most neurons in the small-angle regime $\sin(\epsilon) \approx \epsilon$. It is unclear whether (a)~the power-law heavy tail produces enough large weights to escape this regime, or (b)~the reported accuracy would improve substantially with a larger scale. This should be tested empirically by running the benchmark at multiple scales (e.g.\ $0.1$, $1.0$, $10.0$) before finalising results. The classification cell (784-D input, sigmoid activation) is unaffected.}}
 \bigskip
 
 \added[id=R1]{For the PDE solver, we employ the sinusoidal activation $\phi(x) = \sin(x)$, whose smooth higher-order derivatives are essential for computing the differential equation residuals. For classification tasks, we use the standard sigmoid activation $\sigma(x) = 1/(1+e^{-x})$. The iterative PINN baseline uses the hyperbolic tangent activation.}
@@ -124,7 +124,7 @@ For high-dimensional physics data, we optimize this solve using Cholesky Decompo
 \bigskip
 \noindent\fcolorbox{red}{red!10}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 {\color{red}\textbf{NEED TO CHECK AND VERIFY}}\\[4pt]
-\textbf{Review Note \#2 --- Optimal $\lambda$:} The choice of $\lambda = 10^{-6}$ and the claimed logarithmic sweep must be re-validated \emph{after} the weight-scaling issue (Review Note \#1) is resolved. With the current $0.1\times$ scaling the sweep produces a monotone curve favouring large $\lambda$; a corrected weight scale should yield the expected U-shaped bias--variance trade-off.}}
+\textbf{Review Note \#2 --- Optimal $\lambda$:} The choice of $\lambda = 10^{-6}$ and the claimed logarithmic sweep should be re-validated once the weight-scaling question (Review Note~\#1) is settled. With the current $0.1\times$ scaling the sweep produces a monotone curve; if a larger scale is adopted, the sweep should be re-run to confirm the expected U-shaped bias--variance trade-off and the optimal $\lambda$ value.}}
 \bigskip
 
 \subsection{Resolving Spectral Bias in PDEs}
