@@ -26,7 +26,6 @@ PINN_ELM_final/*.fdb_latexmk
 PINN_ELM_final/*.fls
 PINN_ELM_final/*.synctex.gz
 PINN_ELM_final/*.spl
-PINN_ELM_final/*.pdf
 
 PINN_ELM_review/*.aux
 PINN_ELM_review/*.bbl
@@ -38,7 +37,6 @@ PINN_ELM_review/*.fdb_latexmk
 PINN_ELM_review/*.fls
 PINN_ELM_review/*.synctex.gz
 PINN_ELM_review/*.spl
-PINN_ELM_review/*.pdf
 PINN_ELM_review/*.loc
 PINN_ELM_review/*.soc
 

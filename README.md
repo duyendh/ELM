@@ -100,14 +100,22 @@ Or open `ELM_Energy_Minimization.ipynb` directly in VS Code.
 ELM/
 ├── .venv/                          # Python virtual environment
 ├── .vscode/                        # VS Code + LaTeX Workshop config
-├── PINN_ELM/
-│   ├── main.tex                    # Main manuscript (elsarticle class)
-│   ├── references.bib              # BibTeX references
-│   └── figure2_boxplot.png         # Statistical results figure
+├── PINN_ELM/                       # ⛔ ORIGINAL — do not edit
+│   ├── main.tex                    # Original submitted manuscript
+│   └── references.bib
+├── PINN_ELM_review/                # 🔴 REVIEW — working draft with review notes
+│   ├── main.tex                    # Manuscript + red "NEED TO CHECK" boxes
+│   └── references.bib
+├── PINN_ELM_final/                 # ✅ FINAL — clean version after corrections
+│   ├── main.tex                    # Post-review corrected manuscript
+│   └── references.bib
 ├── ELM_Energy_Minimization.ipynb   # Experiment notebook
 ├── INSTRUCTIONS.md                 # Detailed editing guide
+├── REVIEW_CHECKLIST.md             # Review checklist & notes
 └── README.md                       # ← You are here
 ```
+
+> **Workflow:** Edit `PINN_ELM_review/` to address review notes → once resolved, produce the clean version in `PINN_ELM_final/`. Never modify `PINN_ELM/` (the original submission).
 
 ---
 

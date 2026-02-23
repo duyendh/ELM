@@ -4,9 +4,11 @@ Work through each item below. When you're ready for me to apply a change, just s
 
 ---
 
-## 1 · Keywords (line ≈ 33)
+## 1 · Keywords (line ≈ 33) — ✅ SOLVED
 
 **Problem:** Current keywords (*Deep Learning, Percolation Theory, Network Robustness, Scale-Free Universality*) are leftover from a different paper and have nothing to do with this manuscript.
+
+> **Resolution:** Keywords replaced with *Physics-Informed Neural Networks, Extreme Learning Machines, Power-Law Initialization, Energy Minimization, Spectral Bias*.
 
 **Current:**
 ```latex
@@ -25,9 +27,11 @@ Power-Law Initialization \sep Energy Minimization \sep Spectral Bias
 
 ---
 
-## 2 · Abstract (lines ≈ 26–31)
+## 2 · Abstract (lines ≈ 26–31) — ✅ SOLVED
 
 **Problem:** Claims "150× speedup" as a measured fact. Only 7.3× is measured; 150× is a theoretical extrapolation. Also omits the classification experiment entirely.
+
+> **Resolution:** Abstract now states measured 7.3× (vs Light PINN) and 416× (vs Deep PINN). Classification experiment on MNIST/FashionMNIST mentioned.
 
 **Current:**
 ```latex
@@ -63,9 +67,11 @@ approach.
 
 ---
 
-## 3 · Energy Minimization Subsection (lines ≈ 54–60)
+## 3 · Energy Minimization Subsection (lines ≈ 54–60) — ✅ SOLVED
 
 **Problem:** This reads like a "to-do note to self" rather than published content. A reviewer would flag it immediately.
+
+> **Resolution:** Replaced with geometric explanation of convex projection vs non-convex backpropagation.
 
 **Current:**
 ```latex
@@ -98,9 +104,11 @@ convergence guarantee.
 
 ---
 
-## 4 · Key Contributions (lines ≈ 62–72)
+## 4 · Key Contributions (lines ≈ 62–72) — ✅ SOLVED
 
 **Problem:** Bullet 4 cites "150×" as a realised result rather than a theoretical projection.
+
+> **Resolution:** Bullet 4 now reports measured 7.3× (Light PINN) and 416× (Deep PINN) on the 1-D Poisson benchmark.
 
 **Current (bullet 4):**
 ```latex
@@ -118,9 +126,11 @@ convergence guarantee.
 
 ---
 
-## 5 · Methods — Hyperparameter Justification (after line ≈ 118)
+## 5 · Methods — Hyperparameter Justification (after line ≈ 118) — ✅ SOLVED
 
 **Problem:** The paper states *h = 4096* and *λ = 10⁻⁶* but never says why. Reviewers will ask.
+
+> **Resolution:** Added over-parameterisation rationale for h=4096, logarithmic sweep for λ=10⁻⁶, and lr=5×10⁻³ for PINN baseline.
 
 **Current (end of the analytical-projection subsection):**
 ```latex
@@ -143,9 +153,11 @@ iterations of the Adam optimiser ($\text{lr} = 10^{-3}$).
 
 ---
 
-## 6 · Results — Measured vs Projected (lines ≈ 157–163)
+## 6 · Results — Measured vs Projected (lines ≈ 157–163) — ✅ SOLVED
 
 **Problem:** The "150× speedup over deep iterative architectures" is stated as measured. It is not — it comes from the complexity formula, not from an experiment you ran.
+
+> **Resolution:** Now reports 7.3× (Light PINN) and 416× (Deep PINN) — both experimentally measured from the notebook run.
 
 **Current (third bullet in the Statistical Performance subsection):**
 ```latex
@@ -164,9 +176,11 @@ iterations of the Adam optimiser ($\text{lr} = 10^{-3}$).
 
 ---
 
-## 7 · Discussion — 150× Caveat (lines ≈ 181–184)
+## 7 · Discussion — 150× Caveat (lines ≈ 181–184) — ✅ SOLVED
 
 **Problem:** Paragraph presents 150× as an achieved result ("achieved by the EM-ELM over deep PINNs"). Must reframe as theoretical.
+
+> **Resolution:** Now reads "$416\times$ speedup (measured against a four-layer deep PINN)". Honest framing since 416× is experimentally measured.
 
 **Current:**
 ```latex
@@ -197,9 +211,11 @@ a two-second training cycle is prohibitive.
 
 ---
 
-## 8 · Conclusions (lines ≈ 198–212)
+## 8 · Conclusions (lines ≈ 198–212) — ✅ SOLVED
 
 **Problem:** Conclusion repeats the "150×" claim as achieved. Should separate measured from projected.
+
+> **Resolution:** Finding #2 now reports measured 7.3× and 416× — both verified from experiment. No measured-vs-projected ambiguity remains.
 
 **Current:**
 ```latex
@@ -259,7 +275,7 @@ the natural next step to establish broader applicability.
 
 ---
 
-## 9 · Remove `\nocite{*}` (line ≈ 215)
+## 9 · Remove `\nocite{*}` (line ≈ 215) — ❌ OPEN
 
 **Problem:** `\nocite{*}` dumps every entry from `references.bib` into the bibliography, even ones you never cite. Reviewers will notice unreferenced items in the reference list.
 
@@ -280,14 +296,14 @@ the natural next step to establish broader applicability.
 
 ## Quick Reference
 
-| # | Section | One-line summary |
-|---|---------|-----------------|
-| 1 | Keywords | Replace wrong keywords with actual paper topics |
-| 2 | Abstract | Separate measured 7.3× from projected 150× |
-| 3 | Energy Min. | Replace to-do note with real paragraph |
-| 4 | Contributions | Bullet 4: measured vs projected |
-| 5 | Methods | Add hyperparameter justification |
-| 6 | Results | Efficiency bullet: measured vs projected |
-| 7 | Discussion | Reframe 150× as projection |
-| 8 | Conclusions | Honest scope, measured vs projected |
-| 9 | Bibliography | Remove `\nocite{*}` |
+| # | Section | One-line summary | Status |
+|---|---------|-----------------|--------|
+| 1 | Keywords | Replace wrong keywords with actual paper topics | ✅ Done |
+| 2 | Abstract | Separate measured 7.3× from projected 150× | ✅ Done |
+| 3 | Energy Min. | Replace to-do note with real paragraph | ✅ Done |
+| 4 | Contributions | Bullet 4: measured vs projected | ✅ Done |
+| 5 | Methods | Add hyperparameter justification | ✅ Done |
+| 6 | Results | Efficiency bullet: measured vs projected | ✅ Done |
+| 7 | Discussion | Reframe 150× as projection | ✅ Done |
+| 8 | Conclusions | Honest scope, measured vs projected | ✅ Done |
+| 9 | Bibliography | Remove `\nocite{*}` | ❌ Open |
