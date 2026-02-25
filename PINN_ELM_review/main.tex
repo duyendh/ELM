@@ -6,7 +6,7 @@
 \usepackage{ulem} % for \sout
 \normalem % prevent ulem from replacing \emph
 % draft overrides the global 'final' so change markup stays visible
-\usepackage[markup=default,draft]{changes}
+\usepackage[markup=default,draft,commentmarkup=footnote]{changes}
 \definechangesauthor[name={Reviewer}, color=green!60!black]{R1}
 \definechangesauthor[name={Data Update}, color=blue!70!black]{R2}
 
@@ -94,11 +94,14 @@ The development of the Power-Law EM-ELM intersects three rapidly evolving domain
 
 \subsubsection{Physics-Informed Neural Networks (PINNs)}
 
-Since the landmark work of Raissi et al.~\cite{raissi2019physics}, PINNs have become the standard for solving forward and inverse problems in PDEs. By embedding the PDE residual into the loss function, these models ensure that the learned solution adheres to physical laws. However, recent literature emphasizes that the backpropagation process in PINNs is prone to spectral bias~\cite{basri2020frequency}, where the network converges to low-frequency solutions while neglecting high-frequency details. Our work addresses this by replacing iterative search with a multiscale analytical projection.
+Since the landmark work of Raissi et al.~\cite{raissi2019physics}, PINNs have become the standard for solving forward and inverse problems in PDEs. By embedding the PDE residual into the loss function, these models ensure that the learned solution adheres to physical laws. % WHY ADDED [Audit #4]: Rahaman et al. (2019) is the foundational spectral bias paper.
+% Reviewers will flag its absence; Basri et al. alone is insufficient as primary reference.
+However, recent literature emphasizes that the backpropagation process in PINNs is prone to spectral bias~\cite{rahaman2019spectral,basri2020frequency}, where the network converges to low-frequency solutions while neglecting high-frequency details. \added[id=R1, comment={[Audit 4/9] Verbatim from Wang et al. (2022): "This results in extremely slow convergence to the high-frequency components of the target function. Thus we may conclude that PINNs suffer from the spectral bias either." NTK-based proof that PINNs exhibit spectral bias -- most direct PINN-specific motivation for our work.}]{Wang et al.~\cite{wang2022pinns} further demonstrated via neural tangent kernel analysis that PINNs exhibit spectral bias, with extremely slow convergence to high-frequency solution components.} Our work addresses this by replacing iterative search with a multiscale analytical projection.
 
 \subsubsection{Extreme Learning Machines (ELMs) and Random Projections}
 
-The ELM architecture, pioneered by Huang et al.~\cite{huang2006extreme}, offers a radical alternative to backpropagation by utilizing fixed, random hidden layers and analytically solving for output weights. While ELMs are known for their extreme training speed, they traditionally rely on Gaussian initializations that struggle to capture the complex manifolds of physical systems. The proposed EM-ELM bridges this gap by introducing Power-Law initialization ($\alpha=2.0$), which provides the frequency diversity required for high-precision physics tasks.
+The ELM architecture, pioneered by Huang et al.~\cite{huang2006extreme}, offers a radical alternative to backpropagation by utilizing fixed, random hidden layers and analytically solving for output weights. \added[id=R1, comment={[Audit 1/9] Dong and Li (2021) is the direct predecessor ELM-for-PDEs paper (CMAME 387, 114129). Replaces the phantom arXiv:2105.14354 citation. Must cite as prior art -- same analytical projection paradigm, but uses standard random init.}]{Dong and Li~\cite{dong2021extreme} extended ELMs to PDE solving via local networks and domain decomposition, demonstrating orders-of-magnitude improvements over PINN; however, their approach relies on standard random initialization.}
+\added[id=R1, comment={[Audit 9] Dwivedi and Srinivasan (2020) PIELM (Neurocomputing 391, 96-118) -- audit flags this as the most directly comparable prior method. Not citing it is a major gap for reviewers.}]{Dwivedi and Srinivasan~\cite{dwivedi2020pielm} independently introduced PIELM, confirming the viability of direct ELM-based PDE solving.} While ELMs are known for their extreme training speed, they traditionally rely on Gaussian initializations that struggle to capture the complex manifolds of physical systems. The proposed EM-ELM bridges this gap by introducing Power-Law initialization ($\alpha=2.0$), which provides the frequency diversity required for high-precision physics tasks.
 
 \subsubsection{Randomized Numerical Linear Algebra and Neural Operators}
 
