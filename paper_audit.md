@@ -1,153 +1,227 @@
-# Paper Audit: "Accelerating Physics-Informed Learning via Power-Law Extreme Learning Machines"
+# Paper Weakness Audit — EM-ELM (Updated 2026-03-31)
+
+Based on full read of `PINN_ELM_final/main.tex`.
 
 ---
 
-## 🔴 CRITICAL ISSUES
+## Critical (would cause rejection)
 
-### 1. Reference [7] — arXiv:2105.14354 Does NOT Exist
+### 1. Weight scale `* 0.1` invalidates the spectral bias claim
+**Location:** Methods §2.1 (Line 77–79)
 
-The paper cites:
-> *S. Dong, Z. Li, "Extreme learning machine-based predictors for accelerating physics-informed neural networks," arXiv:2105.14354 (2021).*
+The paper claims Power-Law creates a "multiscale basis," but the code multiplies all weights by `0.1`. With `sin(0.1 * w * x)`, the max effective frequency is ~0.3 — both Power-Law AND Gaussian are stuck at low frequencies. The "80% improvement" over Gaussian is real but comes from distribution **shape** at the same tiny scale, not from reaching higher frequencies.
 
-**This arXiv ID does not resolve to any paper.** The actual Dong & Li (2021) paper on ELM for PDEs is:
+The Helmholtz benchmark (k=10, freq=31.4) only works because the notebook there implicitly uses a different effective scale. A reviewer who reads the code will catch this contradiction.
 
-- **Correct paper:** S. Dong, Z. Li, *"Local extreme learning machines and domain decomposition for solving linear and nonlinear partial differential equations,"* *Computer Methods in Applied Mechanics and Engineering*, 387, 114129, 2021. arXiv: **2012.02895**
-
-The title in [7] is also wrong. This is either a phantom citation or a fabricated arXiv ID. **Must be corrected before any submission.**
+**Fix:** Either (a) acknowledge that `*0.1` limits both methods and the improvement is from tail shape, or (b) remove the fixed scaling and tune `w_scale` per problem (as done in the fixed notebook).
 
 ---
 
-### 2. Contradictory Speedup Numbers in the Abstract
+### 2. Burgers table has "---" placeholders
+**Location:** Table 2 (Lines 200–204)
 
-The abstract contains two unreconciled speedup claims left side-by-side:
+Cannot submit with missing data. Needs actual numbers from the rerun.
 
-- **Version 1 (original):** "7.3× over single-layer PINN and 416× over four-layer deep PINN"
-- **Version 2 (Change #2):** "150× speedup on benchmark PDEs"
-
-A reviewer seeing both in the final abstract would immediately flag this as a serious inconsistency. **One version must be chosen and the other deleted entirely.**
+**Fix:** Run Burgers cell 9 in the fixed notebook and fill in the table.
 
 ---
 
-### 3. Internally Acknowledged Measurement Inconsistency
+### 3. PINN comparison is unfair
+**Location:** Methods §2.2 (Line 89)
 
-The paper openly states:
-> *"The original submitted figure reported a 7.3× speedup. When re-running the notebook, we obtain 10.7×"*
+The main Poisson benchmark uses a PINN with **400 iterations, 128 neurons, 1 layer** — this is a deliberately weak baseline. The paper then claims a 416× speedup over a **4-layer deep PINN with 2000 iterations**, which is still undertrained for nonlinear PDEs. Literature standard (Raissi et al. 2019) uses 10,000+ Adam steps + L-BFGS.
 
-This means the reported figure comes from an **unreproducible run**, and the authors consciously retained an older number "to stay consistent with the published figure." For venues like NeurIPS or ICML this is a reproducibility red flag. Either re-run the experiment and update all numbers consistently, or explicitly characterize run-to-run variance with error bars in the results section.
+A reviewer will say: "you're comparing against an undertrained PINN."
 
----
-
-## 🟠 SIGNIFICANT CONCERNS
-
-### 4. Reference [2] — Misuse of Basri et al. (2020) for Spectral Bias
-
-The paper uses Basri et al. as its **sole** primary citation for "spectral bias." However, the Basri et al. (2020) paper specifically addresses *"Frequency Bias in Neural Networks for Input of Non-Uniform Density"* — a specialized extension of spectral bias theory for non-uniform data distributions, **not** the foundational spectral bias paper.
-
-The **canonical primary citation** that reviewers will expect is:
-
-> Rahaman, N. et al. *"On the Spectral Bias of Neural Networks,"* ICML 2019. arXiv: 1806.08734.
-
-Using only Basri et al. for a general spectral bias claim will appear as either a literature gap or an error to expert reviewers. **Add Rahaman et al. (2019) as the primary reference.**
+**Fix:** Increase PINN iterations to at least 5,000 Adam + L-BFGS, or explicitly acknowledge the light PINN baseline and justify why (e.g., "we compare against a single-layer PINN with comparable parameter count to the ELM's output layer").
 
 ---
 
-### 5. "Critical State" at α = 2.0 — Unsubstantiated Claim
+### 4. ~~ELM does supervised regression, PINN does physics~~ → CONVERT TO PIELM
+**Location:** Methods §2.2 (Lines 86–88), all PDE benchmark cells
 
-The paper states:
-> *"α = 2.0 represents a 'critical state' in statistical mechanics, creating a multiscale basis."*
+**The Problem:**
+In the current PDE benchmarks, the ELM minimizes `||H*β − u_true||²` — it fits the **known analytical solution** directly. The PINN minimizes the **PDE residual** without access to the solution. This is not a fair comparison:
 
-This invokes a serious and specific concept from physics (criticality, phase transitions) but **no citation or derivation is provided.** A reviewer will immediately challenge this. Either:
-
-- Cite a specific paper connecting α = 2 to a critical state in the relevant context (e.g., Barabási–Albert networks, heavy-tailed random matrix theory), **or**
-- Soften the language to something like: *"a value associated with heavy-tailed, multiscale behavior"*
-
----
-
-### 6. Cholesky Complexity Claim is Misleading
-
-The paper states:
-> *"Cholesky Decomposition reduces computational complexity from O(n³) to O(⅓n³)"*
-
-This is **technically incorrect as stated.** Cholesky has cost ~⅓n³ FLOPS vs. LU at ~⅔n³ FLOPS — a ~2× constant-factor improvement. Both remain **O(n³)**. The paper implies this unlocks a new complexity class, which it does not.
-
-**Rewrite as:** *"Cholesky decomposition halves the constant factor compared to general LU decomposition, reducing the solve cost from ⅔n³ to ⅓n³ FLOPS."*
-
----
-
-### 7. The 416× Speedup Is Not Actually Derived from the Formula
-
-The theoretical speedup formula gives:
-
-$$S \approx O(I \cdot k \cdot L)$$
-
-But the paper never specifies what values of *I*, *k*, and *L* yield 416×. Without plugging in the actual experimental parameters (e.g., I = 400 iterations, k = derivative order multiplier, L = 4 layers), the theoretical section does not "prove" the observed speedup as claimed. It only shows the speedup scales with these factors.
-
-**Either plug in the actual parameter values to verify the formula predicts ~416×, or qualify the claim as "consistent with" rather than "derived from" the analysis.**
-
----
-
-## 🟡 MINOR / EDITORIAL CONCERNS
-
-### 8. Draft Artifacts Still Visible in Manuscript
-
-The following internal notes must be removed entirely before any submission — they make it obvious the document is an unfinished draft:
-
-| Artifact | Location |
-|---|---|
-| `NEED TO CHECK` | Appears twice (Sections 2.1, 2.2) |
-| `Change #1`, `Change #2` | Abstract / Keywords section |
-| `DATA NOTE` | Page 1 |
-| `Review Note #1`, `Review Note #2` | Sections 2.1, 2.2 |
-| `R1` flags | Multiple locations |
-| Duplicate abstract text | Page 1 |
-
----
-
-### 9. Missing Key Related Work
-
-For NeurIPS/ICML, reviewers will expect citation of the following highly relevant prior work that is currently absent:
-
-| Missing Citation | Why It Matters |
-|---|---|
-| Dwivedi & Srinivasan (2020), *PIELM*, arXiv:1907.03507 | Most directly comparable prior method (ELM for PDEs); not citing it is a major gap |
-| Wang, Yu & Perdikaris (2022), *"When and Why PINNs Fail to Train"*, J. Comput. Phys. | Direct NTK-based proof of spectral bias in PINNs; central to your motivation |
-| Rahaman et al. (2019), *"On the Spectral Bias of Neural Networks"*, ICML | Foundational spectral bias reference (see Issue #4) |
-
----
-
-### 10. Reference [4] — FNO Title Incorrect
-
-The FNO citation reads:
-> *"Fourier neural operator for **arbitrary** partial differential equations"*
-
-The correct title is:
-> *"Fourier Neural Operator for **Parametric** Partial Differential Equations"*
-
----
-
-## Summary Priority Table
-
-| # | Issue | Severity | Required Action |
-|---|---|---|---|
-| 1 | arXiv:2105.14354 doesn't exist | 🔴 Critical | Replace with correct citation (arXiv:2012.02895) |
-| 2 | Contradictory speedup numbers in abstract | 🔴 Critical | Choose one version, delete the other |
-| 3 | Acknowledged irreproducible figure | 🔴 Critical | Re-run or formally characterize variance |
-| 4 | Wrong primary citation for spectral bias | 🟠 Significant | Add Rahaman et al. (2019) |
-| 5 | "Critical state" at α=2.0 is unsupported | 🟠 Significant | Cite supporting theory or soften claim |
-| 6 | Cholesky complexity claim is misleading | 🟠 Significant | Reframe as constant-factor improvement |
-| 7 | 416× not actually derived from formula | 🟠 Significant | Plug in actual values or soften claim |
-| 8 | Draft artifacts still in manuscript | 🟡 Minor | Delete all `NEED TO CHECK`, `R1`, `Change #` notes |
-| 9 | Missing PIELM and key related work | 🟡 Minor | Add Dwivedi & Srinivasan (2020), Wang et al. (2022) |
-| 10 | FNO title slightly wrong | 🟡 Minor | Fix "arbitrary" → "parametric" |
-
----
-
-## Corrected Reference List
-
-| Ref | Original | Corrected |
+| | Current ELM (supervised) | PINN |
 |---|---|---|
-| [2] | Basri et al. (2020) only | Add: Rahaman et al., "On the Spectral Bias of Neural Networks," ICML 2019, arXiv:1806.08734 |
-| [4] | "...for arbitrary PDEs" | "Fourier Neural Operator for Parametric Partial Differential Equations" |
-| [7] | arXiv:2105.14354 (does not exist) | S. Dong, Z. Li, CMAME 387, 114129, 2021. arXiv:2012.02895 |
-| [new] | — | V. Dwivedi, B. Srinivasan, "Physics Informed Extreme Learning Machine (PIELM)," arXiv:1907.03507, 2020 |
-| [new] | — | S. Wang, X. Yu, P. Perdikaris, "When and Why PINNs Fail to Train," J. Comput. Phys. 449, 2022 |
+| **Needs the answer?** | Yes — needs `u_true` at grid points | No — only knows the PDE |
+| **What it minimizes** | `||prediction − u_true||²` | `||PDE residual||²` |
+
+**Note:** This does NOT apply to the MNIST/FashionMNIST classification benchmark, where both ELM and backprop receive the same `(image, label)` training pairs — a fair comparison.
+
+**The Fix — Implement PIELM (Physics-Informed ELM):**
+
+Convert all PDE benchmarks from supervised ELM to PIELM ([Dwivedi & Srinivasan 2020](https://arxiv.org/abs/1907.03507)). PIELM applies the PDE operator to the random basis analytically, then solves for β using physics — no `u_true` needed during training.
+
+#### How PIELM works
+
+For `φ_j(x) = sin(w_j·x + b_j)`, the derivatives are analytic:
+```
+φ_j'(x)  =  w_j · cos(w_j·x + b_j)
+φ_j''(x) = -w_j² · sin(w_j·x + b_j)
+```
+
+**Poisson: `-u''(x) = f(x)`**
+```python
+H     = sin(X @ W + b)                    # shape (N, h)
+H_xx  = -(W**2) * sin(X @ W + b)          # analytic second derivative
+# PDE: -u'' = f  →  -H_xx @ β = f  →  (W² ⊙ H) @ β = f
+H_pde = (W**2) * H                        # = -H_xx
+
+# Boundary conditions: u(-1) = 0, u(1) = 0
+H_bc = sin(X_bc @ W + b)                  # shape (2, h)
+u_bc = [0, 0]
+
+# Stack into one linear system:
+A = vstack([H_pde, λ_bc * H_bc])          # shape (N+2, h)
+b = vstack([f_source, u_bc])              # shape (N+2, 1)
+
+# Solve: β = argmin ||Aβ - b||²  (one-shot, same as before)
+beta = solve(A^T A + λI, A^T @ b)
+```
+
+**Helmholtz: `-u''(x) - k²u(x) = f(x)`**
+```python
+H_pde = (W**2 - k**2) * H                 # combines -u'' and -k²u
+# Same BC stacking, same one-shot solve
+```
+
+**Multi-Frequency Poisson:** Same as Poisson (different f).
+
+**Burgers (nonlinear): `u_t + u·u_x = ν·u_xx`**
+The `u·u_x` term is **nonlinear in β** → PIELM cannot be applied directly.
+Options:
+- (a) Keep supervised regression for Burgers only (acknowledge in paper)
+- (b) Use iterative Newton-like PIELM (Dong & Li 2021 approach)
+- (c) Drop Burgers from paper (simplest)
+
+#### Key advantage of PIELM approach
+- ELM and PINN now solve the **same problem** (PDE from physics only)
+- Speed comparison becomes fair: both discover the solution, ELM just does it in one shot
+- `u_true` is only used for **evaluation** (computing L2 error), never for training
+- This is exactly what Dwivedi (2020) and Dong & Li (2021) do — standard in the field
+
+#### Implementation checklist for `ELM_Energy_Minimization_fixed.ipynb`
+
+- [ ] Add `solve_pielm_poisson(x, f_source, h_dim, ...)` — uses H_pde + BCs
+- [ ] Add `solve_pielm_helmholtz(x, f_source, k, h_dim, ...)` — uses (W²-k²)⊙H + BCs
+- [ ] Add `solve_pielm_multifreq(x, f_source, h_dim, ...)` — same as Poisson
+- [ ] Update Cell 3 (main Poisson benchmark) — replace `solve_elm` with `solve_pielm`
+- [ ] Update Cell 11 (Multi-Freq Poisson) — replace `solve_elm_1d` with `solve_pielm`
+- [ ] Update Cell 13 (Helmholtz) — replace `solve_elm_1d` with `solve_pielm`
+- [ ] Cell 9 (Burgers) — keep supervised OR implement nonlinear PIELM
+- [ ] Keep `u_true` only for error evaluation, never in training
+- [ ] Update paper text to describe PIELM formulation instead of supervised regression
+- [ ] Add Dwivedi (2020) citation for PIELM methodology
+
+---
+
+## Major (would require revision)
+
+### 5. "Critical state" α=2.0 claim is unsupported
+**Location:** Methods §2.1 (Line 79)
+
+> "This specific value is significant because it represents a 'critical state' in statistical mechanics"
+
+No citation, no proof. α=2.0 produces a Cauchy-like distribution, not a phase transition. No ablation over α values is presented.
+
+**Fix:** Either cite a specific result connecting α=2.0 to criticality (e.g., Lévy flights, sandpile models), or soften to "we empirically select α=2.0 as it provides a good balance between frequency coverage and numerical conditioning."
+
+---
+
+### 6. Cholesky complexity claim is misleading
+**Location:** Methods §2.2 (Lines 88–89)
+
+> "reduces computational complexity from O(n³) to O(⅓n³)"
+
+These are the **same complexity class** O(n³). The ⅓ is a constant factor, not a complexity reduction. A reviewer will flag this as overstating the contribution.
+
+**Fix:** Change to: "Cholesky decomposition reduces the constant factor from ~n³ (full LU) to ~⅓n³, providing a practical speedup without changing the asymptotic complexity."
+
+---
+
+### 7. No α ablation study
+
+Paper claims α=2.0 is the right choice but never tests α=1.5, 2.5, 3.0. Without this, a reviewer cannot evaluate whether the choice is principled or lucky.
+
+**Fix:** Add a small table or figure showing L2 error vs α ∈ {1.5, 2.0, 2.5, 3.0} on the Poisson benchmark. Even 5 seeds each would suffice.
+
+---
+
+### 8. Extended benchmark numbers are stale/inconsistent
+
+- Table says Multi-Freq PL/G ratio = **1.5×** but text (line 220) says **"1.2×"**
+- Table says Helmholtz ratio = **3.7×** but text (line 237) says **"3.5×"**
+- Burgers text (line 254) quotes old numbers (0.207, 0.269) that don't match current "---"
+
+**Fix:** After rerunning all benchmarks, do a single pass to update all numbers consistently in both the table and the prose.
+
+---
+
+## Minor (but worth fixing)
+
+### 9. No Limitations section
+
+Paper doesn't discuss when Power-Law fails (localized features, 2D problems, Burgers shock). Honest limitations strengthen a paper. Every top venue expects this.
+
+**Fix:** Add a short "Limitations" subsection in Discussion acknowledging:
+- ELM requires reference data (unlike PINN)
+- Global sinusoidal basis struggles with localized features (boundary layers, shocks)
+- Weight scale must be tuned per problem (no universal default)
+
+---
+
+### 10. MNIST/FashionMNIST in abstract but missing from body
+
+Abstract mentions "classification experiment on MNIST and FashionMNIST confirms the generality" but the Results section only discusses PDE benchmarks. The classification results are in the notebook but never appear in the paper.
+
+**Fix:** Either add a brief subsection with the MNIST/FashionMNIST table, or remove the claim from the abstract.
+
+---
+
+### 11. "Real-Time Digital Twin" overclaim
+**Location:** Discussion §5.2 (Lines 272–273)
+
+Solving a 1D Poisson equation doesn't demonstrate digital twin capability. This is marketing language a reviewer will push back on.
+
+**Fix:** Soften to: "The sub-second latency of the EM-ELM suggests potential for real-time applications such as surrogate modeling in digital twin pipelines, though validation on production-scale systems remains future work."
+
+---
+
+### 12. Text/table number mismatches
+
+| Location | Table says | Text says |
+|----------|-----------|-----------|
+| Multi-Freq Poisson ratio | 1.5× | 1.2× |
+| Helmholtz ratio | 3.7× | 3.5× |
+| Helmholtz PL error | 0.183 | 0.159 |
+| Helmholtz G error | 0.668 | 0.557 |
+
+**Fix:** Single pass to sync all numbers after final rerun.
+
+---
+
+## Priority Order
+
+| Priority | Issue | Effort |
+|----------|-------|--------|
+| 1 | Fill Burgers table (blocker) | Rerun notebook |
+| 2 | Fix weight scale story (Critical #1) | Text edit |
+| 3 | Add ELM vs PINN fairness disclaimer (Critical #4) | 1 paragraph |
+| 4 | Sync all numbers (Major #8) | One pass after rerun |
+| 5 | Soften α=2.0 and Cholesky claims (Major #5, #6) | Text edits |
+| 6 | Add Limitations section (Minor #9) | 1 paragraph |
+
+---
+
+## Previously Fixed Issues (from earlier audit)
+
+These were already resolved in the current version:
+- ✅ arXiv:2105.14354 phantom citation → fixed to 2012.02895
+- ✅ Missing Rahaman et al. (2019) spectral bias reference → added
+- ✅ Missing Dwivedi & Srinivasan (2020) PIELM reference → added
+- ✅ Missing Wang et al. (2022) NTK spectral bias reference → added
+- ✅ FNO title "arbitrary" → "Parametric" → fixed
+- ✅ Draft artifacts (Change #1, #2, NEED TO CHECK) → removed from final version
+- ✅ Contradictory speedup numbers → unified to 7.3×/416×
