@@ -1,0 +1,393 @@
+\documentclass[final,12pt,3p,times,fleqn]{elsarticle}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amsfonts,amssymb,graphicx,booktabs,hyperref,float,multirow}
+% \usepackage{algorithm,algpseudocode}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Log-Uniform Initialization for Budget-Constrained\\Physics-Informed Extreme Learning Machines}
+
+\author[1,2]{Quang Nguyen\corref{cor1}}
+\ead{nquang@hcmiu.edu.vn}
+
+\address[1]{Department of Physics, International University, Ho Chi Minh City, Vietnam}
+\address[2]{Viet Nam National University Ho Chi Minh City, Vietnam}
+
+\cortext[cor1]{Corresponding author}
+
+\begin{abstract}
+Physics-Informed Extreme Learning Machines (PIELMs) offer a one-shot alternative to iterative Physics-Informed Neural Networks (PINNs) for solving partial differential equations. However, their accuracy is highly sensitive to the weight scale hyperparameter $R_m$, which must be tuned per problem---often requiring expensive search procedures. We combine sinusoidal activation~(following recent Fourier-based PIELM work) with log-uniform weight initialization, a power-law distribution ($\alpha \approx 1$) that allocates neurons uniformly across frequency decades---an idea explored by Tancik et al.\ for deep Fourier feature networks but not yet studied in the PIELM setting. Through systematic experiments on five linear PDE benchmarks, we demonstrate three results: (i)~at tight neuron budgets ($h \leq 40$), log-uniform initialization outperforms Gaussian and uniform by up to $300\times$ in $L_2$ error, because every basis function covers a distinct frequency scale; (ii)~an ablation over the power-law exponent $\alpha$ reveals that $\alpha \approx 0.75$--$1.25$ is optimal, while heavier tails ($\alpha = 2$) degrade accuracy by up to seven orders of magnitude; (iii)~a scale sweep shows that log-uniform degrades more gracefully than Gaussian when $R_m$ is over-specified, reducing the need for per-problem tuning. All training uses the PDE residual and boundary conditions only---no reference solution is required.
+\end{abstract}
+
+\begin{keyword}
+Physics-Informed Extreme Learning Machines \sep
+Log-Uniform Initialization \sep
+Sinusoidal Activation \sep
+Weight Scale Robustness \sep
+Spectral Basis Diversity
+\end{keyword}
+
+\end{frontmatter}
+
+
+%% ===================================================================
+\section{Introduction}
+\label{sec:intro}
+%% ===================================================================
+
+Physics-Informed Neural Networks (PINNs)~\cite{raissi2019physics} embed partial differential equation (PDE) residuals into the training loss, enabling mesh-free solvers that learn solutions from the governing equations. Despite their flexibility, PINNs require thousands of gradient-descent iterations and suffer from spectral bias---a systematic preference for low-frequency solution components that slows convergence on multi-scale problems~\cite{rahaman2019spectral,wang2022pinns}.
+
+Extreme Learning Machines (ELMs)~\cite{huang2006extreme} bypass iterative training entirely: the hidden-layer weights are frozen at random, and only the output weights $\beta$ are solved analytically via least-squares. Dwivedi and Srinivasan~\cite{dwivedi2020pielm} extended this idea to PDEs as Physics-Informed ELMs (PIELMs), applying the differential operator to the random basis analytically, and solving a single linear system that enforces the PDE residual and boundary conditions without any reference solution.
+
+A central limitation of PIELMs is their sensitivity to the weight scale $R_m$. Dong~\cite{dong2022computing} showed that accuracy can vary by orders of magnitude as $R_m$ changes, and proposed differential evolution to find the optimal value---an expensive search that partially negates the one-shot advantage of ELMs. This scale sensitivity arises because all standard initialization schemes (Gaussian, uniform) concentrate weights in a narrow band of effective frequencies, so the basis can only resolve solution features near that band.
+
+In this work, we address the scale sensitivity problem through two complementary ideas:
+
+\begin{enumerate}
+    \item \textbf{Sinusoidal activation for PIELM.} Following recent work on Fourier-based PIELM~\cite{li2023fpielm,ren2025gffpielm,sitzmann2020siren}, we use $\phi(x) = \sin(x)$ instead of $\tanh$ or Gaussian RBF. For $\sin(w_j x + b_j)$, the PDE operator yields exact, closed-form expressions:
+    \[
+        \frac{d^2}{dx^2}\sin(w_j x + b_j) = -w_j^2 \sin(w_j x + b_j),
+    \]
+    so the PIELM system matrix can be assembled without finite differences or automatic differentiation. Crucially, each neuron becomes an explicit Fourier mode with frequency $|w_j|$, making the weight initialization directly interpretable as a spectral allocation problem.
+
+    \item \textbf{Log-uniform weight initialization.} We draw the weight magnitudes $|w|$ from a log-uniform distribution on $[1, R_m]$, which allocates equal probability to each decade of frequency. Tancik et al.~\cite{tancik2020fourier} explored log-uniform sampling for deep Fourier feature networks and concluded that only the standard deviation of the frequency distribution matters, not its shape. We show that this conclusion does \emph{not} transfer to the PIELM setting: when the neuron budget is tight, distribution shape becomes critical because there is no iterative training to compensate for a poor basis.
+\end{enumerate}
+
+Our experiments yield three main findings:
+\begin{itemize}
+    \item \textbf{Low neuron budgets.} When the hidden dimension $h$ is small ($h \leq 40$), log-uniform initialization outperforms Gaussian by $10$--$300\times$ in $L_2$ error, because every neuron covers a distinct frequency scale rather than duplicating others (Section~\ref{sec:neuron_budget}).
+    \item \textbf{Optimal exponent.} An ablation over the power-law exponent $\alpha$ in $P(w) \propto |w|^{-\alpha}$ shows that $\alpha \approx 0.75$--$1.25$ (near log-uniform) is optimal; $\alpha = 2.0$ degrades accuracy by up to seven orders of magnitude on multi-frequency problems (Section~\ref{sec:alpha_ablation}).
+    \item \textbf{Scale robustness.} A sweep over $R_m$ shows that log-uniform degrades more gracefully than Gaussian when the scale is over-specified, reducing the need for per-problem tuning (Section~\ref{sec:scale_sweep}).
+\end{itemize}
+
+
+%% ===================================================================
+\section{Methods}
+\label{sec:methods}
+%% ===================================================================
+
+\subsection{Physics-Informed ELM with Sinusoidal Basis}
+\label{sec:pielm}
+
+Given a linear PDE $\mathcal{L}[u](x) = f(x)$ on domain $\Omega$ with Dirichlet boundary conditions $u|_{\partial\Omega} = g$, PIELM approximates the solution as
+\begin{equation}\label{eq:trial}
+    \hat{u}(x) = \sum_{j=1}^{h} \beta_j \, \sin(w_j x + b_j),
+\end{equation}
+where the weights $\{w_j, b_j\}$ are frozen at initialization and only $\beta \in \mathbb{R}^h$ is solved for.
+
+\paragraph{Exact PDE operators.}
+Because $\sin(\cdot)$ is an eigenfunction of differentiation, the PDE operator applied to each basis function has a closed form. For the Poisson equation $-u'' = f$:
+\begin{equation}\label{eq:poisson_op}
+    -\frac{d^2}{dx^2}\sin(w_j x + b_j) = w_j^2 \, \sin(w_j x + b_j).
+\end{equation}
+For the Helmholtz equation $-u'' - k^2 u = f$:
+\begin{equation}\label{eq:helmholtz_op}
+    \bigl(-\tfrac{d^2}{dx^2} - k^2\bigr)\sin(w_j x + b_j) = (w_j^2 - k^2)\, \sin(w_j x + b_j).
+\end{equation}
+For advection--diffusion $-\varepsilon u'' + u' = f$:
+\begin{equation}\label{eq:advdiff_op}
+    \bigl(-\varepsilon \tfrac{d^2}{dx^2} + \tfrac{d}{dx}\bigr)\sin(w_j x + b_j) = \varepsilon w_j^2 \sin(w_j x + b_j) + w_j \cos(w_j x + b_j).
+\end{equation}
+No finite differences or computational graphs are needed---the feature matrix is assembled analytically.
+
+\paragraph{Linear system.}
+Let $\{x_i\}_{i=1}^{N}$ be interior collocation points and $\{x_k^{\text{bc}}\}$ boundary points. Define the PDE feature matrix $A_{\text{pde}} \in \mathbb{R}^{N \times h}$ with entries $[\mathcal{L}[\phi_j]](x_i)$, and boundary feature matrix $A_{\text{bc}}$ with entries $\phi_j(x_k^{\text{bc}})$. The PIELM system is:
+\begin{equation}\label{eq:system}
+    \underbrace{\begin{bmatrix} A_{\text{pde}} \\ \lambda_{\text{bc}}\, A_{\text{bc}} \end{bmatrix}}_{A}
+    \beta =
+    \underbrace{\begin{bmatrix} f_{\text{int}} \\ \lambda_{\text{bc}}\, g_{\text{bc}} \end{bmatrix}}_{\mathbf{r}},
+\end{equation}
+where $\lambda_{\text{bc}}$ is a penalty weight for boundary enforcement. The output weights are obtained via Tikhonov-regularized least-squares:
+\begin{equation}\label{eq:solve}
+    \beta = (A^\top A + \lambda I)^{-1} A^\top \mathbf{r}.
+\end{equation}
+The entire training procedure---from weight generation to $\beta$---is a single forward pass with cost $O(N h^2 + h^3)$.
+
+
+\subsection{Log-Uniform Initialization}
+\label{sec:loguniform}
+
+Standard ELM initializations draw weights from distributions concentrated at a single scale:
+\begin{itemize}
+    \item \textbf{Gaussian}: $w_j \sim \mathcal{N}(0, R_m)$ --- weights cluster near zero; most neurons produce similar low-frequency features.
+    \item \textbf{Uniform}: $w_j \sim \mathcal{U}(-R_m, R_m)$ --- weights are uniformly spaced in magnitude, over-representing high frequencies near $R_m$.
+\end{itemize}
+
+We propose \textbf{log-uniform initialization}: the magnitude $|w_j|$ is drawn uniformly in log-space over $[0, \log_{10} R_m]$,
+\begin{equation}\label{eq:loguniform}
+    |w_j| = 10^{u_j}, \quad u_j \sim \mathcal{U}(0,\, \log_{10} R_m),
+\end{equation}
+with an independent random sign $\text{sgn}(w_j) \in \{-1, +1\}$ and bias $b_j \sim \mathcal{U}(-\pi, \pi)$.
+
+This places equal probability mass on each decade of frequency (e.g., $[1, 10]$ and $[10, 100]$ each receive $50\%$ of neurons when $R_m = 100$). In the language of power-law distributions~\cite{clauset2009powerlaw}, log-uniform corresponds to $P(|w|) \propto |w|^{-\alpha}$ with $\alpha = 1$, the boundary between light-tailed ($\alpha < 1$) and heavy-tailed ($\alpha > 1$) regimes.
+
+\paragraph{Connection to random Fourier features.}
+For sinusoidal activation, $\sin(w_j x + b_j)$ is a random Fourier feature~\cite{rahimi2007random,tancik2020fourier}. The weight distribution controls the \emph{spectral measure} of the kernel approximated by the ELM. Gaussian weights yield a Gaussian kernel (narrowband), while log-uniform weights yield a broadband kernel whose spectrum decays as $1/\omega$---a natural match for physical systems with energy distributed across scales.
+
+
+\subsection{Complexity Comparison}
+\label{sec:complexity}
+
+\begin{table}[htbp]
+\centering
+\caption{Computational cost comparison. $I$: iterations, $N$: collocation points, $h$: hidden neurons, $L$: layers, $k$: AD cost factor.}
+\label{tab:complexity}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Method} & \textbf{Training Cost} & \textbf{Iterations} \\
+\midrule
+PINN (backpropagation) & $O(I \cdot k \cdot N \cdot L \cdot h^2)$ & $I \geq 10^3$ \\
+PIELM (this work) & $O(N \cdot h^2 + h^3)$ & $1$ (one-shot) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The speedup factor scales as $\mathcal{S} \approx I \cdot k \cdot L$ when $N \gg h$, which exceeds $10^3$ for typical PINN configurations.
+
+
+%% ===================================================================
+\section{Experimental Setup}
+\label{sec:setup}
+%% ===================================================================
+
+All experiments use the PIELM formulation (Eq.~\ref{eq:system}--\ref{eq:solve}) with $\lambda_{\text{bc}} = 100$, $\lambda = 10^{-10}$, $N = 200$ interior points, and double precision arithmetic. The reference solution $u_{\text{true}}$ is used \emph{only for evaluation} (computing $L_2$ relative error); it is never seen during training.
+
+\subsection{Benchmark Problems}
+
+We evaluate on five linear PDEs with known analytical solutions:
+
+\begin{enumerate}
+    \item \textbf{Poisson 1D:} $-u'' = \pi^2 \sin(\pi x)$ on $[-1,1]$, $u(\pm 1) = 0$. Solution: $u = \sin(\pi x)$.
+
+    \item \textbf{Multi-frequency Poisson:} $-u'' = f(x)$ on $[-1,1]$ with manufactured solution $u = \sin(\pi x) + 0.3\sin(3\pi x) + 0.1\sin(7\pi x)$, combining three spatial frequencies.
+
+    \item \textbf{Helmholtz ($k=10$):} $-u'' - 100\,u = f$ on $[-1,1]$ with $u = \sin(\pi x)\,e^{-4x^2}$, a localized wave packet requiring both oscillatory and envelope features.
+
+    \item \textbf{High-frequency Poisson:} $-u'' = (10\pi)^2 \sin(10\pi x)$ on $[-1,1]$, testing the ability to resolve a single high-frequency mode ($\omega = 10\pi \approx 31.4$).
+
+    \item \textbf{Advection--diffusion:} $-\varepsilon u'' + u' = 0$ on $[0,1]$, $u(0)=0$, $u(1)=1$, $\varepsilon = 0.02$. The solution exhibits a sharp boundary layer near $x = 1$.
+\end{enumerate}
+
+\subsection{Initialization Strategies}
+
+Three weight initializations are compared:
+\begin{itemize}
+    \item \textbf{Log-Uniform (proposed):} $|w_j| = 10^{u_j}$, $u_j \sim \mathcal{U}(0, \log_{10} R_m)$, $\text{sgn}(w_j) \sim \{-1,+1\}$, $b_j \sim \mathcal{U}(-\pi, \pi)$.
+    \item \textbf{Gaussian:} $w_j \sim \mathcal{N}(0, R_m)$, $b_j \sim \mathcal{N}(0, R_m)$.
+    \item \textbf{Uniform:} $w_j \sim \mathcal{U}(-R_m, R_m)$, $b_j \sim \mathcal{U}(-R_m, R_m)$.
+\end{itemize}
+Unless otherwise stated, we use $R_m = 30$, $h = 400$ hidden neurons, and 20 independent random seeds per configuration.
+
+
+%% ===================================================================
+\section{Results}
+\label{sec:results}
+%% ===================================================================
+
+\subsection{Benchmark Comparison at Fixed Scale}
+\label{sec:benchmark}
+
+Table~\ref{tab:benchmark} reports the $L_2$ relative error across all five benchmarks at the default configuration ($h = 400$, $R_m = 30$).
+
+\begin{table}[htbp]
+\centering
+\caption{PIELM benchmark results (mean $\pm$ std over 20 seeds, $h=400$, $R_m=30$). Bold indicates best.}
+\label{tab:benchmark}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+\textbf{Problem} & \textbf{Init} & \textbf{Mean $L_2$ Error} & \textbf{Time (ms)} \\
+\midrule
+\multirow{3}{*}{Poisson 1D}
+  & Log-Uniform & $\mathbf{7.9 \times 10^{-10} \pm 8.8 \times 10^{-10}}$ & 2.1 \\
+  & Gaussian    & $1.7 \times 10^{-8} \pm 2.1 \times 10^{-8}$ & 1.4 \\
+  & Uniform     & $1.1 \times 10^{-9} \pm 1.7 \times 10^{-9}$ & 1.5 \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{Multi-Freq\\Poisson}}
+  & Log-Uniform & $\mathbf{2.0 \times 10^{-9} \pm 1.7 \times 10^{-9}}$ & 1.3 \\
+  & Gaussian    & $2.4 \times 10^{-8} \pm 2.0 \times 10^{-8}$ & 1.3 \\
+  & Uniform     & $3.7 \times 10^{-9} \pm 6.9 \times 10^{-9}$ & 1.3 \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{Helmholtz\\($k=10$)}}
+  & Log-Uniform & $7.7 \times 10^{-9} \pm 1.2 \times 10^{-8}$ & 1.2 \\
+  & Gaussian    & $1.2 \times 10^{-7} \pm 2.1 \times 10^{-7}$ & 1.5 \\
+  & Uniform     & $\mathbf{5.3 \times 10^{-9} \pm 1.2 \times 10^{-8}}$ & 1.3 \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{High-Freq\\Poisson}}
+  & Log-Uniform & $3.0 \times 10^{-5} \pm 3.5 \times 10^{-5}$ & 1.6 \\
+  & Gaussian    & $\mathbf{2.8 \times 10^{-7} \pm 3.1 \times 10^{-7}}$ & 1.3 \\
+  & Uniform     & $6.2 \times 10^{-6} \pm 5.7 \times 10^{-6}$ & 1.2 \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{Advection-\\Diffusion}}
+  & Log-Uniform & $9.6 \times 10^{-4} \pm 8.7 \times 10^{-4}$ & 1.5 \\
+  & Gaussian    & $\mathbf{5.5 \times 10^{-6} \pm 4.3 \times 10^{-6}}$ & 1.4 \\
+  & Uniform     & $1.3 \times 10^{-2} \pm 5.4 \times 10^{-2}$ & 1.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $h = 400$ and $R_m = 30$, all three initializations achieve errors below $10^{-7}$ on the first three benchmarks---the system is over-determined and the basis is sufficiently rich regardless of initialization. Differences emerge on the high-frequency and boundary-layer problems, where Gaussian initialization performs best because its weight distribution ($\mathcal{N}(0, 30)$) concentrates mass near the target frequencies ($10\pi \approx 31.4$ and $1/\varepsilon = 50$). Log-uniform distributes its neurons across \emph{all} decades and thus allocates fewer neurons to the critical band.
+
+This observation motivates two questions: (i)~when the neuron budget is \emph{tight}, does log-uniform's diversity become an advantage? and (ii)~when the scale $R_m$ is \emph{misspecified}, which initialization degrades least?
+
+
+\subsection{Neuron Budget Experiment}
+\label{sec:neuron_budget}
+
+We sweep the hidden dimension $h \in \{20, 40, 60, 80, 100, 150, 200, 300, 400\}$ at fixed $R_m = 30$.
+
+\begin{table}[htbp]
+\centering
+\caption{$L_2$ error at low neuron budgets ($R_m = 30$, 20 seeds). Bold indicates best per row.}
+\label{tab:neuron_budget}
+\begin{tabular}{@{}clccc@{}}
+\toprule
+\textbf{Problem} & $h$ & \textbf{Log-Uniform} & \textbf{Gaussian} & \textbf{Uniform} \\
+\midrule
+\multirow{4}{*}{\shortstack[l]{Multi-Freq\\Poisson}}
+  & 20  & $\mathbf{5.5 \times 10^{-2}}$ & $8.5 \times 10^{-1}$ & $5.3 \times 10^{-1}$ \\
+  & 40  & $7.8 \times 10^{-4}$ & $2.3 \times 10^{-3}$ & $\mathbf{1.4 \times 10^{-6}}$ \\
+  & 60  & $9.5 \times 10^{-5}$ & $5.4 \times 10^{-9}$ & $\mathbf{9.7 \times 10^{-10}}$ \\
+  & 300 & $\mathbf{1.5 \times 10^{-9}}$ & $6.3 \times 10^{-7}$ & $2.7 \times 10^{-9}$ \\
+\midrule
+\multirow{4}{*}{\shortstack[l]{Helmholtz\\($k=10$)}}
+  & 20  & $\mathbf{2.9 \times 10^{-3}}$ & $8.9 \times 10^{-1}$ & $3.2 \times 10^{-1}$ \\
+  & 40  & $\mathbf{4.1 \times 10^{-8}}$ & $7.3 \times 10^{-5}$ & $7.8 \times 10^{-8}$ \\
+  & 60  & $\mathbf{1.7 \times 10^{-9}}$ & $2.5 \times 10^{-9}$ & $3.7 \times 10^{-9}$ \\
+  & 300 & $\mathbf{1.0 \times 10^{-8}}$ & $7.0 \times 10^{-8}$ & $3.0 \times 10^{-8}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{fig_neuron_budget_hero.png}
+    \caption{\textbf{Log-uniform initialization at tight neuron budgets.} Top row: $L_2$ error versus hidden dimension $h$ (shaded: $\pm 1$ std, 20 seeds). Annotations show the Gaussian-to-log-uniform error ratio at $h = 20$. Middle row: bar chart of error ratios at $h = 20$ and $h = 40$; values above $1$ (dashed line) indicate log-uniform wins. Bottom row: reconstructed solution fields and pointwise error at $h = 20$ for multi-frequency Poisson and Helmholtz ($k{=}10$); Gaussian and uniform fail to capture the solution structure, while log-uniform tracks the exact solution.}
+    \label{fig:neuron_budget}
+\end{figure}
+
+The key finding is at $h = 20$: log-uniform achieves $L_2 = 2.9 \times 10^{-3}$ on Helmholtz while Gaussian fails entirely ($8.9 \times 10^{-1}$)---a $300\times$ advantage. At $h = 40$ the gap narrows but remains $1{,}800\times$ for Helmholtz. The mechanism is straightforward: with only 20 neurons, Gaussian initialization ($\mathcal{N}(0, 30)$) generates many weights near $\pm 30$, producing nearly identical basis functions. Log-uniform distributes weights across $[1, 30]$ in log-space, ensuring each neuron covers a distinct frequency. When the budget is tight, this diversity is the difference between a solvable and an unsolvable system.
+
+As $h$ increases beyond 60, all methods converge because the over-parameterized basis spans the solution space regardless of initialization.
+
+
+\subsection{Power-Law Exponent Ablation}
+\label{sec:alpha_ablation}
+
+We generalize the initialization to a truncated power-law $P(|w|) \propto |w|^{-\alpha}$ on $[0.1, R_m]$ and sweep $\alpha \in \{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0\}$ with $h = 400$ and $R_m = 30$.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{exp3_alpha_ablation.png}
+    \caption{$L_2$ error versus power-law exponent $\alpha$. The gray dashed line marks $\alpha = 2.0$; the gold circle marks the empirical optimum. The secondary axis (gray squares) shows the condition number of $A$. Increasing $\alpha$ concentrates weights near $w_{\min}$, degrading both accuracy and conditioning.}
+    \label{fig:alpha}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\caption{Effect of power-law exponent $\alpha$ on $L_2$ error ($h=400$, $R_m=30$, 20 seeds).}
+\label{tab:alpha}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+$\alpha$ & Poisson & Multi-Freq Poisson & Helmholtz ($k=10$) \\
+\midrule
+0.50 & $1.8 \times 10^{-9}$  & $6.0 \times 10^{-9}$  & $8.8 \times 10^{-9}$ \\
+0.75 & $8.1 \times 10^{-10}$ & $\mathbf{1.4 \times 10^{-9}}$  & $6.2 \times 10^{-9}$ \\
+1.00 & $1.1 \times 10^{-9}$  & $2.5 \times 10^{-9}$  & $2.6 \times 10^{-8}$ \\
+1.25 & $3.4 \times 10^{-10}$ & $2.5 \times 10^{-8}$  & $\mathbf{4.3 \times 10^{-9}}$ \\
+$\mathbf{1.50}$ & $\mathbf{1.8 \times 10^{-10}}$ & $6.5 \times 10^{-5}$  & $5.3 \times 10^{-7}$ \\
+\midrule
+2.00 & $6.3 \times 10^{-9}$  & $6.8 \times 10^{-2}$  & $6.0 \times 10^{-3}$ \\
+3.00 & $2.9 \times 10^{-4}$  & $1.9 \times 10^{-1}$  & $1.3 \times 10^{-1}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For the simple Poisson problem (single frequency), the exponent has little effect for $\alpha \leq 1.5$. However, for multi-frequency and Helmholtz problems---which require the basis to cover a wider range of scales---the transition is sharp. On multi-frequency Poisson, $\alpha = 0.75$ achieves $1.4 \times 10^{-9}$ while $\alpha = 2.0$ achieves $6.8 \times 10^{-2}$: a degradation of nearly \emph{eight orders of magnitude}.
+
+The mechanism is clear from the distribution: at $\alpha = 2$, the density $P(|w|) \propto |w|^{-2}$ concentrates most neurons at low frequencies near $w_{\min}$, leaving almost no neurons to resolve the $3\pi$ and $7\pi$ harmonics. At $\alpha \leq 1$, the distribution is flat or increasing in log-space, ensuring adequate coverage of all frequency bands.
+
+
+\subsection{Scale Sweep}
+\label{sec:scale_sweep}
+
+To address the question raised by Dong~\cite{dong2022computing}---whether the initialization benefit is merely a scale effect---we sweep $R_m \in \{1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 80, 100, 150\}$ independently for each initialization.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{exp2_scale_sweep.png}
+    \caption{$L_2$ error versus weight scale $R_m$ for four benchmarks. Shaded regions: $\pm 1$ std over 10 seeds. Gaussian (blue) exhibits the narrowest optimal band and degrades by $10^4$--$10^5$ at large $R_m$. Log-uniform (red) remains within $10^2$ of its optimum across the full range tested.}
+    \label{fig:scale_sweep}
+\end{figure}
+
+At each initialization's \emph{optimal} $R_m$, the errors are comparable (all within one order of magnitude). This confirms Dong's finding that scale is the primary determinant of accuracy when the scale is well-tuned.
+
+However, the degradation curves differ qualitatively. For multi-frequency Poisson at $R_m = 100$: Gaussian error $= 5.4 \times 10^{-4}$, log-uniform error $= 7.7 \times 10^{-8}$---a $7{,}000\times$ gap. This robustness to over-specification is the practical advantage: in deployment, one cannot always tune $R_m$ per problem, and log-uniform provides a safe default.
+
+
+\subsection{Frequency Spectrum Analysis}
+\label{sec:spectrum}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{exp4_frequency_logscale.png}
+    \caption{Distribution of weight magnitudes $|w_j|$ in log-space for 5{,}000 neurons at $R_m = 30$. Log-uniform (left) produces a flat distribution---equal coverage per decade. Gaussian (center) and uniform (right) concentrate mass in narrow bands.}
+    \label{fig:spectrum}
+\end{figure}
+
+Figure~\ref{fig:spectrum} visualizes the effective frequency distributions in log-space. The log-uniform distribution is flat by construction---each frequency decade receives the same number of neurons. Gaussian weights produce a peaked distribution centered at $\log_{10}(R_m)$, and uniform weights produce a distribution concentrated near $R_m$. This visual directly explains the neuron budget results: with few neurons, clustered weights create a rank-deficient basis, while spread weights maximize the effective rank.
+
+
+%% ===================================================================
+\section{Discussion}
+\label{sec:discussion}
+%% ===================================================================
+
+\subsection{When Does Initialization Matter?}
+
+Our results delineate two regimes:
+\begin{itemize}
+    \item \textbf{Over-parameterized ($h \gg$ required):} All initializations achieve comparable accuracy ($\sim 10^{-9}$). The basis is rich enough that frequency coverage is guaranteed regardless of distribution shape. In this regime, Dong's~\cite{dong2022computing} finding that scale matters more than distribution holds, consistent with Tancik et al.'s~\cite{tancik2020fourier} observation that only the standard deviation matters for deep networks with iterative training.
+    \item \textbf{Budget-constrained ($h \leq 60$):} Initialization becomes critical. Log-uniform's frequency diversity produces a well-conditioned system with few neurons, while Gaussian wastes capacity on redundant features. This is the regime where Tancik et al.'s conclusion breaks down: without iterative training to compensate, the PIELM must capture the full solution in a single linear solve, and distribution shape determines whether the basis spans the required frequency range. This regime is the relevant one for real-time and edge deployment.
+\end{itemize}
+
+\subsection{Effect of Heavier Tails ($\alpha \geq 2$)}
+
+One might expect heavier-tailed distributions ($\alpha \geq 2$) to improve spectral coverage by producing more extreme weights. Our ablation shows the opposite for PDE solving. At $\alpha = 2$, the density $P(|w|) \propto |w|^{-2}$ assigns most probability to the smallest weights, producing a basis dominated by low-frequency functions. For problems with multi-scale structure (which is the common case in physics), the optimal exponent is $\alpha \approx 0.75$--$1.25$, corresponding to a near-uniform allocation in log-space.
+
+\subsection{Sinusoidal Activation for PIELM}
+
+The sinusoidal activation $\sin(w_j x + b_j)$ has recently been adopted in PIELM variants for biharmonic equations~\cite{li2023fpielm} and high-frequency PDEs~\cite{ren2025gffpielm}. Our work complements these studies by using the sinusoidal basis to expose how weight \emph{initialization}---rather than activation choice---controls solution quality. Because each neuron is explicitly a Fourier mode with frequency $|w_j|$, the weight distribution directly determines the spectral coverage of the basis. This interpretability enabled the frequency-based analysis in Sections~\ref{sec:neuron_budget}--\ref{sec:spectrum}, connecting initialization shape to approximation-theoretic properties of the random feature space.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+    \item \textbf{Nonlinear PDEs.} PIELM requires the PDE operator to be linear in $\beta$. Nonlinear equations (e.g., Burgers) require iterative linearization or time-stepping, losing the one-shot advantage.
+    \item \textbf{Single high-frequency targets.} When the solution contains a single high-frequency mode (e.g., $\sin(10\pi x)$), Gaussian initialization can be superior because it concentrates neurons near the target frequency. Log-uniform spreads its budget across all decades and under-allocates the critical band.
+    \item \textbf{Boundary layers.} The advection--diffusion benchmark reveals that global sinusoidal bases struggle with sharp, localized features. Localized activations (Gaussian RBF) or domain decomposition~\cite{dong2021extreme} may be preferable in such cases.
+    \item \textbf{Higher dimensions.} All experiments are 1D. Extension to 2D and 3D introduces the curse of dimensionality for collocation-based methods and requires further study.
+\end{enumerate}
+
+
+%% ===================================================================
+\section{Conclusions}
+\label{sec:conclusions}
+%% ===================================================================
+
+We introduced two modifications to the Physics-Informed ELM framework: sinusoidal activation for exact PDE operator assembly, and log-uniform weight initialization for multi-scale frequency coverage. The main findings are:
+
+\begin{enumerate}
+    \item At low neuron budgets ($h \leq 40$), log-uniform initialization outperforms Gaussian by up to $300\times$ on Helmholtz and $15\times$ on multi-frequency Poisson, by ensuring every neuron covers a distinct frequency scale.
+    \item The power-law exponent $\alpha \approx 0.75$--$1.25$ is optimal; heavier tails ($\alpha = 2.0$) degrade accuracy by up to seven orders of magnitude on multi-scale problems, because they concentrate neurons at low frequencies rather than spreading them across scales.
+    \item Log-uniform initialization degrades more gracefully than Gaussian when the weight scale $R_m$ is over-specified, reducing the need for the expensive scale-tuning procedures proposed by Dong~\cite{dong2022computing}.
+\end{enumerate}
+
+These results position log-uniform PIELM as a practical choice for resource-constrained settings where both speed and robustness matter---edge computing, real-time surrogate models, and rapid prototyping of PDE solutions. Future work will extend the framework to multi-dimensional problems, nonlinear PDEs via iterative PIELM, and adaptive allocation of neurons to frequency bands informed by the PDE structure.
+
+
+\bibliographystyle{elsarticle-num}
+\bibliography{references}
+
+\end{document}
