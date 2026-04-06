@@ -1,0 +1,73 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \def\href#1#2{#2} \def\path#1{#1}\fi
+
+\bibitem{raissi2019physics}
+M.~Raissi, P.~Perdikaris, G.~E. Karniadakis, Physics-informed neural networks:
+  A deep learning framework for solving forward and inverse problems involving
+  nonlinear partial differential equations, Journal of Computational Physics
+  378 (2019) 686--707.
+
+\bibitem{rahaman2019spectral}
+N.~Rahaman, A.~Baratin, D.~Arpit, F.~Draxler, M.~Lin, F.~Hamprecht, Y.~Bengio,
+  A.~Courville, On the spectral bias of neural networks, in: International
+  Conference on Machine Learning (ICML), 2019, pp. 5301--5310.
+
+\bibitem{wang2022pinns}
+S.~Wang, X.~Yu, P.~Perdikaris, When and why {PINN}s fail to train: A neural
+  tangent kernel perspective, Journal of Computational Physics 449 (2022)
+  110768.
+
+\bibitem{huang2006extreme}
+G.-B. Huang, Q.-Y. Zhu, C.-K. Siew, Extreme learning machine: theory and
+  applications, Neurocomputing 70~(1-3) (2006) 489--501.
+
+\bibitem{dwivedi2020pielm}
+V.~Dwivedi, B.~Srinivasan, Physics informed extreme learning machine ({PIELM})
+  -- a rapid method for the numerical solution of partial differential
+  equations, Neurocomputing 391 (2020) 96--118.
+
+\bibitem{dong2022computing}
+S.~Dong, On computing the hyperparameter of extreme learning machines:
+  Algorithm and application to computational {PDE}s, Journal of Computational
+  Physics 463 (2022) 111290.
+
+\bibitem{li2023fpielm}
+X.~Li, J.~Wu, Y.~Huang, Z.~Ding, X.~Tai, L.~Liu, Y.-G. Wang, Augmented physics
+  informed extreme learning machine to solve the biharmonic equations via
+  {F}ourier expansions, Journal of Computational and Applied Mathematics 468
+  (2025) 115544, arXiv:2310.13947.
+
+\bibitem{ren2025gffpielm}
+Y.~Ren, et~al., General {F}ourier feature physics-informed extreme learning
+  machine for high-frequency {PDE}s, arXiv preprint arXiv:2510.12293 (2025).
+
+\bibitem{sitzmann2020siren}
+V.~Sitzmann, J.~N.~P. Martel, A.~W. Bergman, D.~B. Lindell, G.~Wetzstein,
+  Implicit neural representations with periodic activation functions, in:
+  Advances in Neural Information Processing Systems (NeurIPS), Vol.~33, 2020,
+  pp. 7462--7473.
+
+\bibitem{tancik2020fourier}
+M.~Tancik, P.~P. Srinivasan, B.~Mildenhall, S.~Fridovich-Keil, N.~Raghavan,
+  U.~Singhal, R.~Ramamoorthi, J.~T. Barron, R.~Ng, Fourier features let
+  networks learn high frequency functions in low dimensional domains, Advances
+  in Neural Information Processing Systems (NeurIPS) 33 (2020) 7537--7547.
+
+\bibitem{clauset2009powerlaw}
+A.~Clauset, C.~R. Shalizi, M.~E.~J. Newman, Power-law distributions in
+  empirical data, SIAM Review 51~(4) (2009) 661--703.
+
+\bibitem{rahimi2007random}
+A.~Rahimi, B.~Recht, Random features for large-scale kernel machines, Advances
+  in Neural Information Processing Systems (NeurIPS) 20 (2007).
+
+\bibitem{dong2021extreme}
+S.~Dong, Z.~Li, Local extreme learning machines and domain decomposition for
+  solving linear and nonlinear partial differential equations, Computer Methods
+  in Applied Mechanics and Engineering 387 (2021) 114129.
+
+\end{thebibliography}

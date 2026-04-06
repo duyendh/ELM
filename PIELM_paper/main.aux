@@ -1,0 +1,104 @@
+\relax 
+\providecommand \babel@aux [2]{\global \let \babel@toc \@gobbletwo }
+\@nameuse{bbl@beforestart}
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\emailauthor{nquang@hcmiu.edu.vn}{Quang Nguyen\corref {cor1}}
+\Newlabel{cor1}{1}
+\citation{raissi2019physics}
+\citation{rahaman2019spectral,wang2022pinns}
+\citation{huang2006extreme}
+\citation{dwivedi2020pielm}
+\babel@aux{english}{}
+\Newlabel{1}{a}
+\Newlabel{2}{b}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\citation{dong2022computing}
+\citation{li2023fpielm,ren2025gffpielm,sitzmann2020siren}
+\citation{tancik2020fourier}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Methods}{3}{section.2}\protected@file@percent }
+\newlabel{sec:methods}{{2}{3}{Methods}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Physics-Informed ELM with Sinusoidal Basis}{3}{subsection.2.1}\protected@file@percent }
+\newlabel{sec:pielm}{{2.1}{3}{Physics-Informed ELM with Sinusoidal Basis}{subsection.2.1}{}}
+\newlabel{eq:trial}{{1}{3}{Physics-Informed ELM with Sinusoidal Basis}{equation.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Exact PDE operators.}{3}{section*.1}\protected@file@percent }
+\newlabel{eq:poisson_op}{{2}{3}{Exact PDE operators}{equation.2}{}}
+\newlabel{eq:helmholtz_op}{{3}{3}{Exact PDE operators}{equation.3}{}}
+\newlabel{eq:advdiff_op}{{4}{3}{Exact PDE operators}{equation.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Linear system.}{3}{section*.2}\protected@file@percent }
+\newlabel{eq:system}{{5}{3}{Linear system}{equation.5}{}}
+\newlabel{eq:solve}{{6}{3}{Linear system}{equation.6}{}}
+\citation{clauset2009powerlaw}
+\citation{rahimi2007random,tancik2020fourier}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Log-Uniform Initialization}{4}{subsection.2.2}\protected@file@percent }
+\newlabel{sec:loguniform}{{2.2}{4}{Log-Uniform Initialization}{subsection.2.2}{}}
+\newlabel{eq:loguniform}{{7}{4}{Log-Uniform Initialization}{equation.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Connection to random Fourier features.}{4}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Complexity Comparison}{4}{subsection.2.3}\protected@file@percent }
+\newlabel{sec:complexity}{{2.3}{4}{Complexity Comparison}{subsection.2.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Computational cost comparison. $I$: iterations, $N$: collocation points, $h$: hidden neurons, $L$: layers, $k$: AD cost factor.}}{4}{table.1}\protected@file@percent }
+\newlabel{tab:complexity}{{1}{4}{Computational cost comparison. $I$: iterations, $N$: collocation points, $h$: hidden neurons, $L$: layers, $k$: AD cost factor}{table.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Experimental Setup}{4}{section.3}\protected@file@percent }
+\newlabel{sec:setup}{{3}{4}{Experimental Setup}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Benchmark Problems}{5}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Initialization Strategies}{5}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{5}{section.4}\protected@file@percent }
+\newlabel{sec:results}{{4}{5}{Results}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Benchmark Comparison at Fixed Scale}{5}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:benchmark}{{4.1}{5}{Benchmark Comparison at Fixed Scale}{subsection.4.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces PIELM benchmark results (mean $\pm $ std over 20 seeds, $h=400$, $R_m=30$). Bold indicates best.}}{6}{table.2}\protected@file@percent }
+\newlabel{tab:benchmark}{{2}{6}{PIELM benchmark results (mean $\pm $ std over 20 seeds, $h=400$, $R_m=30$). Bold indicates best}{table.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces $L_2$ error at low neuron budgets ($R_m = 30$, 20 seeds). Bold indicates best per row.}}{6}{table.3}\protected@file@percent }
+\newlabel{tab:neuron_budget}{{3}{6}{$L_2$ error at low neuron budgets ($R_m = 30$, 20 seeds). Bold indicates best per row}{table.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textbf  {Log-uniform initialization at tight neuron budgets.} Top row: $L_2$ error versus hidden dimension $h$ (shaded: $\pm 1$ std, 20 seeds). Annotations show the Gaussian-to-log-uniform error ratio at $h = 20$. Middle row: bar chart of error ratios at $h = 20$ and $h = 40$; values above $1$ (dashed line) indicate log-uniform wins. Bottom row: reconstructed solution fields and pointwise error at $h = 20$ for multi-frequency Poisson and Helmholtz ($k{=}10$); Gaussian and uniform fail to capture the solution structure, while log-uniform tracks the exact solution.}}{7}{figure.1}\protected@file@percent }
+\newlabel{fig:neuron_budget}{{1}{7}{\textbf {Log-uniform initialization at tight neuron budgets.} Top row: $L_2$ error versus hidden dimension $h$ (shaded: $\pm 1$ std, 20 seeds). Annotations show the Gaussian-to-log-uniform error ratio at $h = 20$. Middle row: bar chart of error ratios at $h = 20$ and $h = 40$; values above $1$ (dashed line) indicate log-uniform wins. Bottom row: reconstructed solution fields and pointwise error at $h = 20$ for multi-frequency Poisson and Helmholtz ($k{=}10$); Gaussian and uniform fail to capture the solution structure, while log-uniform tracks the exact solution}{figure.1}{}}
+\citation{dong2022computing}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Neuron Budget Experiment}{8}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:neuron_budget}{{4.2}{8}{Neuron Budget Experiment}{subsection.4.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Power-Law Exponent Ablation}{8}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:alpha_ablation}{{4.3}{8}{Power-Law Exponent Ablation}{subsection.4.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces $L_2$ error versus power-law exponent $\alpha $. The gray dashed line marks $\alpha = 2.0$; the gold circle marks the empirical optimum. The secondary axis (gray squares) shows the condition number of $A$. Increasing $\alpha $ concentrates weights near $w_{\min }$, degrading both accuracy and conditioning.}}{8}{figure.2}\protected@file@percent }
+\newlabel{fig:alpha}{{2}{8}{$L_2$ error versus power-law exponent $\alpha $. The gray dashed line marks $\alpha = 2.0$; the gold circle marks the empirical optimum. The secondary axis (gray squares) shows the condition number of $A$. Increasing $\alpha $ concentrates weights near $w_{\min }$, degrading both accuracy and conditioning}{figure.2}{}}
+\citation{dong2022computing}
+\citation{tancik2020fourier}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Effect of power-law exponent $\alpha $ on $L_2$ error ($h=400$, $R_m=30$, 20 seeds).}}{9}{table.4}\protected@file@percent }
+\newlabel{tab:alpha}{{4}{9}{Effect of power-law exponent $\alpha $ on $L_2$ error ($h=400$, $R_m=30$, 20 seeds)}{table.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Scale Sweep}{9}{subsection.4.4}\protected@file@percent }
+\newlabel{sec:scale_sweep}{{4.4}{9}{Scale Sweep}{subsection.4.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Frequency Spectrum Analysis}{9}{subsection.4.5}\protected@file@percent }
+\newlabel{sec:spectrum}{{4.5}{9}{Frequency Spectrum Analysis}{subsection.4.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{9}{section.5}\protected@file@percent }
+\newlabel{sec:discussion}{{5}{9}{Discussion}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}When Does Initialization Matter?}{9}{subsection.5.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces $L_2$ error versus weight scale $R_m$ for four benchmarks. Shaded regions: $\pm 1$ std over 10 seeds. Gaussian (blue) exhibits the narrowest optimal band and degrades by $10^4$--$10^5$ at large $R_m$. Log-uniform (red) remains within $10^2$ of its optimum across the full range tested.}}{10}{figure.3}\protected@file@percent }
+\newlabel{fig:scale_sweep}{{3}{10}{$L_2$ error versus weight scale $R_m$ for four benchmarks. Shaded regions: $\pm 1$ std over 10 seeds. Gaussian (blue) exhibits the narrowest optimal band and degrades by $10^4$--$10^5$ at large $R_m$. Log-uniform (red) remains within $10^2$ of its optimum across the full range tested}{figure.3}{}}
+\citation{li2023fpielm}
+\citation{ren2025gffpielm}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Distribution of weight magnitudes $|w_j|$ in log-space for 5{,}000 neurons at $R_m = 30$. Log-uniform (left) produces a flat distribution---equal coverage per decade. Gaussian (center) and uniform (right) concentrate mass in narrow bands.}}{11}{figure.4}\protected@file@percent }
+\newlabel{fig:spectrum}{{4}{11}{Distribution of weight magnitudes $|w_j|$ in log-space for 5{,}000 neurons at $R_m = 30$. Log-uniform (left) produces a flat distribution---equal coverage per decade. Gaussian (center) and uniform (right) concentrate mass in narrow bands}{figure.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Effect of Heavier Tails ($\alpha \geq 2$)}{11}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Sinusoidal Activation for PIELM}{11}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Limitations}{11}{subsection.5.4}\protected@file@percent }
+\citation{dong2021extreme}
+\citation{dong2022computing}
+\bibstyle{elsarticle-num}
+\bibdata{references}
+\bibcite{raissi2019physics}{{1}{}{{}}{{}}}
+\bibcite{rahaman2019spectral}{{2}{}{{}}{{}}}
+\bibcite{wang2022pinns}{{3}{}{{}}{{}}}
+\bibcite{huang2006extreme}{{4}{}{{}}{{}}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusions}{12}{section.6}\protected@file@percent }
+\newlabel{sec:conclusions}{{6}{12}{Conclusions}{section.6}{}}
+\bibcite{dwivedi2020pielm}{{5}{}{{}}{{}}}
+\bibcite{dong2022computing}{{6}{}{{}}{{}}}
+\bibcite{li2023fpielm}{{7}{}{{}}{{}}}
+\bibcite{ren2025gffpielm}{{8}{}{{}}{{}}}
+\bibcite{sitzmann2020siren}{{9}{}{{}}{{}}}
+\bibcite{tancik2020fourier}{{10}{}{{}}{{}}}
+\bibcite{clauset2009powerlaw}{{11}{}{{}}{{}}}
+\bibcite{rahimi2007random}{{12}{}{{}}{{}}}
+\bibcite{dong2021extreme}{{13}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\gdef \@abspage@last{13}
