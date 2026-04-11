@@ -19,7 +19,7 @@
 \cortext[cor1]{Corresponding author}
 
 \begin{abstract}
-Physics-Informed Extreme Learning Machines (PIELMs) offer a one-shot alternative to iterative Physics-Informed Neural Networks (PINNs) for solving partial differential equations. However, their accuracy is highly sensitive to the weight scale hyperparameter $R_m$, which must be tuned per problem---often requiring expensive search procedures. We combine sinusoidal activation~(following recent Fourier-based PIELM work) with log-uniform weight initialization, a power-law distribution ($\alpha \approx 1$) that allocates neurons uniformly across frequency decades---an idea explored by Tancik et al.\ for deep Fourier feature networks but not yet studied in the PIELM setting. Through systematic experiments on five linear PDE benchmarks---and a generality study on four additional problem types with non-sinusoidal structure---we demonstrate three results: (i)~at tight neuron budgets ($h \leq 40$), log-uniform initialization outperforms Gaussian and uniform by up to $300\times$ in $L_2$ error, because every basis function covers a distinct frequency scale; (ii)~an ablation over the power-law exponent $\alpha$ reveals that $\alpha \approx 0.75$--$1.25$ is optimal, while heavier tails ($\alpha = 2$) degrade accuracy by up to seven orders of magnitude; (iii)~a scale sweep shows that log-uniform degrades more gracefully than Gaussian when $R_m$ is over-specified, reducing the need for per-problem tuning. All training uses the PDE residual and boundary conditions only---no reference solution is required.
+Physics-Informed Extreme Learning Machines (PIELMs) offer a one-shot alternative to iterative Physics-Informed Neural Networks (PINNs) for solving partial differential equations. However, their accuracy is highly sensitive to the weight scale hyperparameter $R_m$, which must be tuned per problem---often requiring expensive search procedures. We combine sinusoidal activation~(following recent Fourier-based PIELM work) with log-uniform weight initialization, a power-law distribution ($\alpha \approx 1$) that allocates neurons uniformly across frequency decades---an idea explored by Tancik et al.\ for deep Fourier feature networks but not yet studied in the PIELM setting. Through systematic experiments on five 1D PDE benchmarks, four additional 1D problems with non-sinusoidal structure, and three 2D benchmarks---we demonstrate three results: (i)~at tight neuron budgets ($h \leq 40$), log-uniform initialization outperforms Gaussian and uniform by up to $300\times$ in $L_2$ error, because every basis function covers a distinct frequency scale; (ii)~an ablation over the power-law exponent $\alpha$ reveals that $\alpha \approx 0.75$--$1.25$ is optimal, while heavier tails ($\alpha = 2$) degrade accuracy by up to seven orders of magnitude; (iii)~a scale sweep shows that log-uniform degrades more gracefully than Gaussian when $R_m$ is over-specified, reducing the need for per-problem tuning. All training uses the PDE residual and boundary conditions only---no reference solution is required.
 \end{abstract}
 
 \begin{keyword}
@@ -93,6 +93,13 @@ For advection--diffusion $-\varepsilon u'' + u' = f$:
 \end{equation}
 No finite differences or computational graphs are needed---the feature matrix is assembled analytically.
 
+\paragraph{Extension to multiple dimensions.}
+For $d$-dimensional inputs, each basis function is $\phi_j(\mathbf{x}) = \sin(\mathbf{w}_j^\top \mathbf{x} + b_j)$ with $\mathbf{w}_j \in \mathbb{R}^d$. The Laplacian is
+\begin{equation}\label{eq:laplacian_nd}
+    -\Delta\, \sin(\mathbf{w}_j^\top \mathbf{x} + b_j) = \|\mathbf{w}_j\|^2 \, \sin(\mathbf{w}_j^\top \mathbf{x} + b_j),
+\end{equation}
+so the PIELM system generalizes directly: the PDE feature matrix entry becomes $\|\mathbf{w}_j\|^2 \cdot \phi_j(\mathbf{x}_i)$ for Poisson and $(\|\mathbf{w}_j\|^2 - k^2)\cdot \phi_j(\mathbf{x}_i)$ for Helmholtz. We exploit this in Section~\ref{sec:2d} for 2D benchmarks.
+
 \paragraph{Linear system.}
 Let $\{x_i\}_{i=1}^{N}$ be interior collocation points and $\{x_k^{\text{bc}}\}$ boundary points. Define the PDE feature matrix $A_{\text{pde}} \in \mathbb{R}^{N \times h}$ with entries $[\mathcal{L}[\phi_j]](x_i)$, and boundary feature matrix $A_{\text{bc}}$ with entries $\phi_j(x_k^{\text{bc}})$. The PIELM system is:
 \begin{equation}\label{eq:system}
@@ -153,7 +160,7 @@ The speedup factor scales as $\mathcal{S} \approx I \cdot k \cdot L$ when $N \gg
 \label{sec:setup}
 %% ===================================================================
 
-All experiments use the PIELM formulation (Eq.~\ref{eq:system}--\ref{eq:solve}) with $\lambda_{\text{bc}} = 100$, $\lambda = 10^{-10}$, $N = 200$ interior points, and double precision arithmetic. The reference solution $u_{\text{true}}$ is used \emph{only for evaluation} (computing $L_2$ relative error); it is never seen during training.
+All experiments use the PIELM formulation (Eq.~\ref{eq:system}--\ref{eq:solve}) with $\lambda_{\text{bc}} = 100$, $\lambda = 10^{-10}$, and double precision arithmetic. The 1D benchmarks use $N = 200$ interior points; the 2D benchmarks use a $30 \times 30$ grid ($N = 900$) with boundary points sampled along all four edges. The reference solution $u_{\text{true}}$ is used \emph{only for evaluation} (computing $L_2$ relative error); it is never seen during training.
 
 \subsection{Benchmark Problems}
 
@@ -181,6 +188,15 @@ To test generality beyond these five core benchmarks, we also evaluate on four a
     \item \textbf{Gaussian $+$ oscillation:} $-u'' = f$ on $[-1,1]$ with $u = e^{-10x^2}\sin(\pi x) + 0.3\sin(7\pi x)$, combining a localized Gaussian pulse with a high-frequency global mode.
 
     \item \textbf{Product trigonometric:} $-u'' = f$ on $[-1,1]$ with $u = \sin(\pi x)\cos(3\pi x) = \tfrac{1}{2}[\sin(4\pi x) - \sin(2\pi x)]$, a product of two frequencies that decomposes into two modes.
+\end{enumerate}
+
+Finally, we test on three 2D problems on $[-1,1]^2$ with $u|_{\partial\Omega} = 0$ (Section~\ref{sec:2d}):
+\begin{enumerate}\setcounter{enumi}{9}
+    \item \textbf{Poisson 2D:} $-\Delta u = f$ with $u = \sin(\pi x)\sin(\pi y)$.
+
+    \item \textbf{Multi-frequency Poisson 2D:} $-\Delta u = f$ with $u = \sin(\pi x)\sin(2\pi y) + 0.3\sin(3\pi x)\sin(\pi y)$, combining modes at different spatial scales in both directions.
+
+    \item \textbf{Helmholtz 2D ($k=5$):} $-\Delta u - 25\,u = f$ with $u = \sin(\pi x)\sin(\pi y)$.
 \end{enumerate}
 
 \subsection{Initialization Strategies}
@@ -380,6 +396,44 @@ Two regimes emerge. On Helmholtz ($k{=}20$) and the product-trigonometric proble
 These results confirm that the low-budget advantage is not specific to the five core benchmarks: it extends to any problem whose solution contains multi-scale frequency content, regardless of whether the solution is a pure sinusoidal sum.
 
 
+\subsection{Extension to Two Dimensions}
+\label{sec:2d}
+
+To test whether the initialization advantage survives in higher dimensions---where frequency space grows from a line to a plane---we evaluate on three 2D benchmarks (benchmarks 10--12) using the multi-dimensional PIELM formulation (Eq.~\ref{eq:laplacian_nd}).
+
+Table~\ref{tab:2d_benchmark} reports results at $h = 400$ and $R_m = 30$ with 20 seeds.
+
+\begin{table}[htbp]
+\centering
+\caption{2D PIELM benchmark results (mean over 20 seeds, $h=400$, $R_m=30$). Bold indicates best.}
+\label{tab:2d_benchmark}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Problem} & \textbf{Log-Uniform} & \textbf{Gaussian} & \textbf{Uniform} \\
+\midrule
+Poisson 2D              & $\mathbf{2.1 \times 10^{-7}}$ & $7.8 \times 10^{-1}$ & $6.0 \times 10^{-1}$ \\
+Multi-Freq Poisson 2D   & $\mathbf{1.3 \times 10^{-4}}$ & $6.7 \times 10^{-1}$ & $4.7 \times 10^{-1}$ \\
+Helmholtz 2D ($k{=}5$)  & $\mathbf{8.9 \times 10^{-7}}$ & $9.5 \times 10^{-1}$ & $8.3 \times 10^{-1}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The results are striking: at $h = 400$---the same budget where 1D methods converge regardless of initialization---Gaussian and uniform \emph{fail completely} on all three 2D benchmarks ($L_2 > 0.6$), while log-uniform achieves $10^{-4}$ to $10^{-7}$. The advantage is not marginal: it exceeds $10^6\times$ on Helmholtz 2D.
+
+Figure~\ref{fig:2d_budget} shows the neuron budget sweep. On Helmholtz 2D, Gaussian never drops below $L_2 = 0.96$ even at $h = 400$, while log-uniform reaches $L_2 = 6.8 \times 10^{-7}$---a ratio exceeding $10^6$. On multi-frequency Poisson 2D, log-uniform achieves $L_2 < 10^{-4}$ at $h = 400$ while Gaussian remains at $0.64$.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{2d_neuron_budget.png}
+    \caption{$L_2$ error versus hidden dimension $h$ for three 2D benchmarks ($R_m = 30$, 20 seeds). In 2D, Gaussian and uniform initialization fail even at $h = 400$, while log-uniform achieves errors below $10^{-4}$. The advantage grows with $h$ rather than diminishing as in 1D.}
+    \label{fig:2d_budget}
+\end{figure}
+
+The mechanism is the same as in 1D but amplified. In 2D, each neuron has a weight vector $\mathbf{w}_j = (w_1, w_2)$; Gaussian initialization draws both components from $\mathcal{N}(0, R_m)$, so the magnitude $\|\mathbf{w}_j\| \approx \sqrt{2}\,R_m$ is concentrated in a narrow band. Log-uniform distributes the magnitudes across decades, ensuring coverage of all frequency scales. Because 2D problems require more basis functions to span the solution space, the waste from duplicate frequencies is more damaging than in 1D---hence the larger advantage.
+
+Appendix~\ref{app:2d_fields} shows the reconstructed solution fields at $h = 40$, where the difference is visible: log-uniform produces recognizable (though imperfect) solutions while Gaussian and uniform produce noise.
+
+
 %% ===================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -407,7 +461,7 @@ The sinusoidal activation $\sin(w_j x + b_j)$ has recently been adopted in PIELM
     \item \textbf{Nonlinear PDEs.} PIELM requires the PDE operator to be linear in $\beta$. Nonlinear equations (e.g., Burgers) require iterative linearization or time-stepping, losing the one-shot advantage.
     \item \textbf{Single high-frequency targets.} When the solution contains a single high-frequency mode (e.g., $\sin(10\pi x)$), Gaussian initialization can be superior because it concentrates neurons near the target frequency. Log-uniform spreads its budget across all decades and under-allocates the critical band.
     \item \textbf{Boundary layers.} The advection--diffusion benchmark reveals that global sinusoidal bases struggle with sharp, localized features. Localized activations (Gaussian RBF) or domain decomposition~\cite{dong2021extreme} may be preferable in such cases.
-    \item \textbf{Higher dimensions.} All experiments are 1D. Extension to 2D and 3D introduces the curse of dimensionality for collocation-based methods and requires further study.
+    \item \textbf{Higher dimensions.} Our 2D experiments (Section~\ref{sec:2d}) show that the advantage grows in 2D, but extension to 3D introduces the curse of dimensionality for collocation-based methods and requires further study.
 \end{enumerate}
 
 
@@ -424,9 +478,9 @@ We introduced two modifications to the Physics-Informed ELM framework: sinusoida
     \item Log-uniform initialization degrades more gracefully than Gaussian when the weight scale $R_m$ is over-specified, reducing the need for the expensive scale-tuning procedures proposed by Dong~\cite{dong2022computing}.
 \end{enumerate}
 
-A generality study on four additional problem types---Helmholtz at higher wavenumber, polynomial-modulated oscillations, Gaussian-localized modes, and trigonometric products---confirms that these findings extend beyond pure sinusoidal solutions to any PDE with multi-scale frequency content.
+A generality study on four additional 1D problem types confirms these findings extend beyond pure sinusoidal solutions. Crucially, 2D experiments on Poisson, multi-frequency Poisson, and Helmholtz show that the advantage \emph{grows} in higher dimensions: at $h = 400$, Gaussian and uniform fail entirely ($L_2 > 0.6$) on all three 2D benchmarks while log-uniform achieves $10^{-4}$ to $10^{-7}$---an advantage exceeding $10^6\times$ on Helmholtz 2D. This occurs because Gaussian initialization concentrates the 2D weight magnitudes $\|\mathbf{w}\|$ in a narrow band, wasting capacity on redundant frequency scales.
 
-These results position log-uniform PIELM as a practical choice for resource-constrained settings where both speed and robustness matter---edge computing, real-time surrogate models, and rapid prototyping of PDE solutions. Future work will extend the framework to multi-dimensional problems, nonlinear PDEs via iterative PIELM, and adaptive allocation of neurons to frequency bands informed by the PDE structure.
+These results position log-uniform PIELM as a practical choice for resource-constrained settings where both speed and robustness matter---edge computing, real-time surrogate models, and rapid prototyping of PDE solutions. Future work will extend the framework to 3D problems, nonlinear PDEs via iterative PIELM, and adaptive allocation of neurons to frequency bands informed by the PDE structure.
 
 
 \appendix
@@ -439,6 +493,17 @@ These results position log-uniform PIELM as a practical choice for resource-cons
     \includegraphics[width=\textwidth]{exp8_hero_diverse.png}
     \caption{\textbf{Power-law advantage across problem types} at the critical neuron budget where log-uniform solves and others fail. Left column: reconstructed solutions; right column: pointwise error. Rows 1--3 (Multi-Freq Poisson, Helmholtz $k{=}20$ at $h{=}20$ and $h{=}15$): log-uniform tracks the exact solution while Gaussian and uniform produce qualitatively wrong fields. Rows 4--5 (Poly $\times$ Oscillation, Gaussian + Oscillation): all methods struggle at this budget, but log-uniform maintains lower pointwise error throughout the domain. Row 6 ($\sin(\pi x)\cos(3\pi x)$ at $h{=}15$): log-uniform resolves the product structure while others fail.}
     \label{fig:diverse}
+\end{figure}
+
+
+\section{2D Solution Fields}
+\label{app:2d_fields}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{2d_solution_fields.png}
+    \caption{\textbf{2D PIELM solution fields at $h = 40$.} Each row is a benchmark; columns show exact solution, log-uniform, Gaussian, and uniform reconstructions. Log-uniform produces recognizable solution structure on Poisson 2D and Helmholtz 2D, while Gaussian and uniform produce incoherent fields. On multi-frequency Poisson 2D, all methods struggle at this tight budget, but log-uniform captures more of the low-frequency structure.}
+    \label{fig:2d_fields}
 \end{figure}
 
 
