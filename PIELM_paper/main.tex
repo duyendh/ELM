@@ -61,6 +61,7 @@ Our experiments yield three main findings:
     \item \textbf{Low neuron budgets.} When the hidden dimension $h$ is small ($h \leq 40$), log-uniform initialization outperforms Gaussian by $10$--$300\times$ in $L_2$ error, because every neuron covers a distinct frequency scale rather than duplicating others (Section~\ref{sec:neuron_budget}).
     \item \textbf{Optimal exponent.} An ablation over the power-law exponent $\alpha$ in $P(w) \propto |w|^{-\alpha}$ shows that $\alpha \approx 0.75$--$1.25$ (near log-uniform) is optimal; $\alpha = 2.0$ degrades accuracy by up to seven orders of magnitude on multi-frequency problems (Section~\ref{sec:alpha_ablation}).
     \item \textbf{Scale robustness.} A sweep over $R_m$ shows that log-uniform degrades more gracefully than Gaussian when the scale is over-specified, reducing the need for per-problem tuning (Section~\ref{sec:scale_sweep}).
+    \item \textbf{Amplification in 2D.} On three 2D benchmarks, the advantage grows: Gaussian and uniform fail entirely ($L_2 > 0.6$) at $h = 400$ while log-uniform achieves $10^{-4}$--$10^{-7}$, because 2D frequency space concentrates Gaussian weight magnitudes even more tightly (Section~\ref{sec:2d}).
 \end{itemize}
 
 
