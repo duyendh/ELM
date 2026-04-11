@@ -19,7 +19,7 @@
 \cortext[cor1]{Corresponding author}
 
 \begin{abstract}
-Physics-Informed Extreme Learning Machines (PIELMs) offer a one-shot alternative to iterative Physics-Informed Neural Networks (PINNs) for solving partial differential equations. However, their accuracy is highly sensitive to the weight scale hyperparameter $R_m$, which must be tuned per problem---often requiring expensive search procedures. We combine sinusoidal activation~(following recent Fourier-based PIELM work) with log-uniform weight initialization, a power-law distribution ($\alpha \approx 1$) that allocates neurons uniformly across frequency decades---an idea explored by Tancik et al.\ for deep Fourier feature networks but not yet studied in the PIELM setting. Through systematic experiments on five 1D PDE benchmarks, four additional 1D problems with non-sinusoidal structure, and three 2D benchmarks---we demonstrate three results: (i)~at tight neuron budgets ($h \leq 40$), log-uniform initialization outperforms Gaussian and uniform by up to $300\times$ in $L_2$ error, because every basis function covers a distinct frequency scale; (ii)~an ablation over the power-law exponent $\alpha$ reveals that $\alpha \approx 0.75$--$1.25$ is optimal, while heavier tails ($\alpha = 2$) degrade accuracy by up to seven orders of magnitude; (iii)~a scale sweep shows that log-uniform degrades more gracefully than Gaussian when $R_m$ is over-specified, reducing the need for per-problem tuning. All training uses the PDE residual and boundary conditions only---no reference solution is required.
+Physics-Informed Extreme Learning Machines (PIELMs) offer a one-shot alternative to iterative Physics-Informed Neural Networks (PINNs) for solving partial differential equations. However, their accuracy is highly sensitive to the weight scale hyperparameter $R_m$, which must be tuned per problem---often requiring expensive search procedures. We combine sinusoidal activation~(following recent Fourier-based PIELM work) with log-uniform weight initialization, a power-law distribution ($\alpha \approx 1$) that allocates neurons uniformly across frequency decades---an idea explored by Tancik et al.\ for deep Fourier feature networks but not yet studied in the PIELM setting. Through systematic experiments on five 1D PDE benchmarks, four additional 1D problems with non-sinusoidal structure, and three 2D benchmarks---we demonstrate three results: (i)~at tight neuron budgets ($h \leq 40$), log-uniform initialization outperforms Gaussian and uniform by up to $300\times$ in $L_2$ error, because every basis function covers a distinct frequency scale; (ii)~an ablation over the power-law exponent $\alpha$ reveals that $\alpha \approx 0.75$--$1.25$ is optimal, with accuracy spanning seven orders of magnitude across the tested range; (iii)~a scale sweep shows that log-uniform degrades more gracefully than Gaussian when $R_m$ is over-specified, reducing the need for per-problem tuning. All training uses the PDE residual and boundary conditions only---no reference solution is required.
 \end{abstract}
 
 \begin{keyword}
@@ -59,7 +59,7 @@ In this work, we address the scale sensitivity problem through two complementary
 Our experiments yield three main findings:
 \begin{itemize}
     \item \textbf{Low neuron budgets.} When the hidden dimension $h$ is small ($h \leq 40$), log-uniform initialization outperforms Gaussian by $10$--$300\times$ in $L_2$ error, because every neuron covers a distinct frequency scale rather than duplicating others (Section~\ref{sec:neuron_budget}).
-    \item \textbf{Optimal exponent.} An ablation over the power-law exponent $\alpha$ in $P(w) \propto |w|^{-\alpha}$ shows that $\alpha \approx 0.75$--$1.25$ (near log-uniform) is optimal; $\alpha = 2.0$ degrades accuracy by up to seven orders of magnitude on multi-frequency problems (Section~\ref{sec:alpha_ablation}).
+    \item \textbf{Optimal exponent.} An ablation over the power-law exponent $\alpha$ in $P(w) \propto |w|^{-\alpha}$ shows that $\alpha \approx 0.75$--$1.25$ (near log-uniform) is optimal for multi-scale problems, with accuracy varying by up to seven orders of magnitude across the tested range (Section~\ref{sec:alpha_ablation}).
     \item \textbf{Scale robustness.} A sweep over $R_m$ shows that log-uniform degrades more gracefully than Gaussian when the scale is over-specified, reducing the need for per-problem tuning (Section~\ref{sec:scale_sweep}).
     \item \textbf{Amplification in 2D.} On three 2D benchmarks, the advantage grows: Gaussian and uniform fail entirely ($L_2 > 0.6$) at $h = 400$ while log-uniform achieves $10^{-4}$--$10^{-7}$, because 2D frequency space concentrates Gaussian weight magnitudes even more tightly (Section~\ref{sec:2d}).
 \end{itemize}
@@ -310,7 +310,7 @@ We generalize the initialization to a truncated power-law $P(|w|) \propto |w|^{-
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{exp3_alpha_ablation.png}
-    \caption{$L_2$ error versus power-law exponent $\alpha$. The gray dashed line marks $\alpha = 2.0$; the gold circle marks the empirical optimum. The secondary axis (gray squares) shows the condition number of $A$. Increasing $\alpha$ concentrates weights near $w_{\min}$, degrading both accuracy and conditioning.}
+    \caption{$L_2$ error versus power-law exponent $\alpha$. The gray dashed line marks $\alpha = 2.0$; the gold circle marks the empirical optimum. The secondary axis (gray squares) shows the condition number of $A$. The optimal range $\alpha \approx 0.75$--$1.25$ corresponds to near-uniform frequency allocation in log-space.}
     \label{fig:alpha}
 \end{figure}
 
@@ -334,9 +334,9 @@ $\mathbf{1.50}$ & $\mathbf{1.8 \times 10^{-10}}$ & $6.5 \times 10^{-5}$  & $5.3 
 \end{tabular}
 \end{table}
 
-For the simple Poisson problem (single frequency), the exponent has little effect for $\alpha \leq 1.5$. However, for multi-frequency and Helmholtz problems---which require the basis to cover a wider range of scales---the transition is sharp. On multi-frequency Poisson, $\alpha = 0.75$ achieves $1.4 \times 10^{-9}$ while $\alpha = 2.0$ achieves $6.8 \times 10^{-2}$: a degradation of nearly \emph{eight orders of magnitude}.
+For the simple Poisson problem (single frequency), the exponent has little effect for $\alpha \leq 1.5$. However, for multi-frequency and Helmholtz problems---which require the basis to cover a wider range of scales---the sensitivity is pronounced. On multi-frequency Poisson, accuracy spans eight orders of magnitude: from $1.4 \times 10^{-9}$ at $\alpha = 0.75$ to $6.8 \times 10^{-2}$ at $\alpha = 2.0$.
 
-The mechanism is clear from the distribution: at $\alpha = 2$, the density $P(|w|) \propto |w|^{-2}$ concentrates most neurons at low frequencies near $w_{\min}$, leaving almost no neurons to resolve the $3\pi$ and $7\pi$ harmonics. At $\alpha \leq 1$, the distribution is flat or increasing in log-space, ensuring adequate coverage of all frequency bands.
+The mechanism is clear from the distribution shape. As $\alpha$ increases, the density $P(|w|) \propto |w|^{-\alpha}$ shifts probability mass toward lower frequencies near $w_{\min}$, reducing the number of neurons available to resolve higher harmonics ($3\pi$, $7\pi$). At $\alpha \leq 1$, the distribution is flat or increasing in log-space, ensuring adequate coverage of all frequency bands. The optimal range $\alpha \approx 0.75$--$1.25$ balances coverage across decades.
 
 
 \subsection{Scale Sweep}
@@ -448,9 +448,9 @@ Our results delineate two regimes:
     \item \textbf{Budget-constrained ($h \leq 60$):} Initialization becomes critical. Log-uniform's frequency diversity produces a well-conditioned system with few neurons, while Gaussian wastes capacity on redundant features. This is the regime where Tancik et al.'s conclusion breaks down: without iterative training to compensate, the PIELM must capture the full solution in a single linear solve, and distribution shape determines whether the basis spans the required frequency range. This regime is the relevant one for real-time and edge deployment.
 \end{itemize}
 
-\subsection{Effect of Heavier Tails ($\alpha \geq 2$)}
+\subsection{Role of the Power-Law Exponent}
 
-One might expect heavier-tailed distributions ($\alpha \geq 2$) to improve spectral coverage by producing more extreme weights. Our ablation shows the opposite for PDE solving. At $\alpha = 2$, the density $P(|w|) \propto |w|^{-2}$ assigns most probability to the smallest weights, producing a basis dominated by low-frequency functions. For problems with multi-scale structure (which is the common case in physics), the optimal exponent is $\alpha \approx 0.75$--$1.25$, corresponding to a near-uniform allocation in log-space.
+The power-law exponent $\alpha$ controls the trade-off between low-frequency coverage and high-frequency reach. At $\alpha \geq 2$, the density $P(|w|) \propto |w|^{-\alpha}$ places most probability mass on small weights, producing a basis rich in low-frequency functions but sparse at higher harmonics. At $\alpha < 1$, the distribution tilts toward larger weights. The optimal range $\alpha \approx 0.75$--$1.25$ (near log-uniform) provides balanced coverage across all frequency decades, which is the natural match for multi-scale PDE solutions.
 
 \subsection{Sinusoidal Activation for PIELM}
 
@@ -475,7 +475,7 @@ We introduced two modifications to the Physics-Informed ELM framework: sinusoida
 
 \begin{enumerate}
     \item At low neuron budgets ($h \leq 40$), log-uniform initialization outperforms Gaussian by up to $300\times$ on Helmholtz and $15\times$ on multi-frequency Poisson, by ensuring every neuron covers a distinct frequency scale.
-    \item The power-law exponent $\alpha \approx 0.75$--$1.25$ is optimal; heavier tails ($\alpha = 2.0$) degrade accuracy by up to seven orders of magnitude on multi-scale problems, because they concentrate neurons at low frequencies rather than spreading them across scales.
+    \item The power-law exponent $\alpha \approx 0.75$--$1.25$ is optimal for multi-scale problems; accuracy varies by up to seven orders of magnitude across the tested $\alpha$ range, with the optimum corresponding to near-uniform allocation in log-space.
     \item Log-uniform initialization degrades more gracefully than Gaussian when the weight scale $R_m$ is over-specified, reducing the need for the expensive scale-tuning procedures proposed by Dong~\cite{dong2022computing}.
 \end{enumerate}
 
